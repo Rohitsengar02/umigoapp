@@ -1,0 +1,32 @@
+# Umigo live stack: open-source LiveKit (media) + Umigo token server + Caddy (free HTTPS).
+# Everything uses host networking so WebRTC UDP ports work without extra mapping.
+services:
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --config /etc/livekit.yaml
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+
+  token:
+    build: ./token-server
+    network_mode: host
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      LIVEKIT_HOST: http://127.0.0.1:7880
+      PORT: "3001"
+
+  caddy:
+    image: caddy:2
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

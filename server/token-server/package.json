@@ -1,0 +1,10 @@
+{
+  "name": "umigo-token-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Signs LiveKit tokens for Umigo and lists live rooms. Works with self-hosted, open-source LiveKit.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": { "start": "node index.js" },
+  "dependencies": { "livekit-server-sdk": "^2.13.0" }
+}
