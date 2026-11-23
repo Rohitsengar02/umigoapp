@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
       - uses: subosito/flutter-action@v2
-        with: { channel: stable, cache: true }
+        with: { channel: stable, flutter-version: '3.50.1', cache: true }
       - run: flutter pub get
       - run: flutter test
       - run: flutter build apk --release --split-per-abi --dart-define=TOKEN_URL=${{ github.event.inputs.token_url || vars.TOKEN_URL || '' }}
