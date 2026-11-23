@@ -8,6 +8,7 @@ import '../widgets/common.dart';
 import '../widgets/live_cards.dart';
 import '../widgets/mascot.dart';
 import '../widgets/motion.dart';
+import '../widgets/skeleton.dart';
 import 'leaderboard_screen.dart';
 import 'wallet_screen.dart';
 
@@ -216,7 +217,9 @@ class _LiveListScreenState extends State<LiveListScreen> {
                     ),
                   ),
                 ),
-                if (list.isEmpty && feed.loadedOnce)
+                if (!feed.loadedOnce && feed.serverConfigured)
+                  SliverPadding(padding: const EdgeInsets.fromLTRB(12, 14, 12, 12), sliver: liveGridSkeletonSliver())
+                else if (list.isEmpty && feed.loadedOnce)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),

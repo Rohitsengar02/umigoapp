@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:livekit_client/livekit_client.dart';
 
+import '../live/fx.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/fx_sheet.dart';
 import '../widgets/live_widgets.dart';
 import 'host_live_screen.dart';
 
@@ -29,7 +31,13 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
   @override
   void initState() {
     super.initState();
+    LiveFx.I.load();
+    LiveFx.I.addListener(_onFx);
     _openCamera();
+  }
+
+  void _onFx() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _openCamera() async {
@@ -40,6 +48,7 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
         return;
       }
       setState(() => preview = t);
+      LiveFx.I.attach(t); // pre-live filters on the preview
     } catch (e) {
       if (mounted) setState(() => camError = 'Camera unavailable. Allow camera access to go live.');
     }
@@ -49,16 +58,25 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
     front = !front;
     try {
       await preview?.setCameraPosition(front ? CameraPosition.front : CameraPosition.back);
+      await LiveFx.I.attach(preview);
     } catch (_) {}
     setState(() {});
   }
 
   @override
   void dispose() {
+    LiveFx.I.removeListener(_onFx);
     _t?.cancel();
     preview?.stop();
     super.dispose();
   }
+
+  bool _toolOn(String id) => switch (id) {
+    'beauty' => LiveFx.I.settings.beautyOn,
+    'filter' => LiveFx.I.settings.look != 'none',
+    'ar' => LiveFx.I.settings.sticker != 'none',
+    _ => tools[id] ?? false,
+  };
 
   void start() {
     setState(() => count = 3);
@@ -88,7 +106,10 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: LiveVideo(track: preview, fallbackImg: preview == null ? 'assets/img/ava.jpg' : null, mirror: front),
+            child: ListenableBuilder(
+              listenable: LiveFx.I,
+              builder: (_, _) => LiveFx.I.preview(LiveVideo(track: preview, fallbackImg: preview == null ? 'assets/img/ava.jpg' : null, mirror: front)),
+            ),
           ),
           const Positioned.fill(child: ShadeOverlay()),
           Positioned(
@@ -102,7 +123,8 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
                 for (final t in [
                   ('flip', Icons.flip_camera_ios_rounded, 'Flip'),
                   ('beauty', Icons.auto_awesome_rounded, 'Beauty'),
-                  ('filter', Icons.filter_vintage_rounded, 'Filters'),
+                  ('filter', Icons.filter_vintage_rounded, 'Looks'),
+                  ('ar', Icons.face_retouching_natural, 'AR'),
                   ('mic', Icons.mic_rounded, 'Mic'),
                 ])
                   Padding(
@@ -113,10 +135,12 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
                           t.$2,
                           tooltip: t.$3,
                           size: 40,
-                          gradient: (tools[t.$1] ?? false) ? const LinearGradient(colors: [UC.primary, UC.primary]) : null,
+                          gradient: _toolOn(t.$1) ? const LinearGradient(colors: [UC.primary, UC.primary]) : null,
                           onTap: () {
                             if (t.$1 == 'flip') {
                               _flip();
+                            } else if (const ['beauty', 'filter', 'ar'].contains(t.$1)) {
+                              showFxSheet(context, tab: const ['beauty', 'filter', 'ar'].indexOf(t.$1));
                             } else {
                               setState(() => tools[t.$1] = !(tools[t.$1] ?? false));
                             }

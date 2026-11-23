@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/live_cards.dart';
 import '../widgets/motion.dart';
+import '../widgets/skeleton.dart';
 import 'profile_screen.dart';
 
 /// Home, laid out from Rohit's sketch: menu + Umigo + coins / bell / profile,
@@ -132,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         ),
+                        if (!feed.loadedOnce && feed.serverConfigured) const StoriesSkeleton(),
                         for (final r in all)
                           _story(
                             label: r.hostName,
@@ -279,6 +281,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 )
+              else if (!feed.loadedOnce && feed.serverConfigured)
+                SliverPadding(padding: const EdgeInsets.fromLTRB(12, 10, 12, 20), sliver: liveGridSkeletonSliver())
               else if (list.isEmpty && feed.loadedOnce)
                 SliverToBoxAdapter(
                   child: Padding(

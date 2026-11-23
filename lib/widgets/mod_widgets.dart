@@ -315,11 +315,13 @@ class _ModPanelState extends State<_ModPanel> {
           child: _sheet(context, 'Umi Guard', [
             Row(
               children: [
-                Icon(Icons.circle, size: 10, color: s.guardOn ? UC.green : UC.muted),
+                Icon(Icons.circle, size: 10, color: s.guardActive || s.demo ? UC.green : UC.muted),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    s.guardOn ? 'Watching chat and video in real time' : 'On-device chat filter only (server bot not in room)',
+                    s.guardOn
+                        ? 'Watching chat and video in real time (server)'
+                        : 'Running inside the app: every phone checks chat, your phone checks your camera',
                     style: ts(13, w: FontWeight.w700, c: UC.muted),
                   ),
                 ),

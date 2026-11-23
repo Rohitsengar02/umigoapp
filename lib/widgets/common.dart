@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../data/demo_data.dart';
 import '../theme.dart';
+import 'skeleton.dart';
 
 class CoinDot extends StatelessWidget {
   final double size;
@@ -79,7 +80,7 @@ class Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inner = (img != null && img!.isNotEmpty)
-        ? Image.asset(img!, fit: BoxFit.cover, width: size, height: size)
+        ? fadeInAsset(img!, w: size, h: size)
         : Container(
             color: UC.deep,
             alignment: Alignment.center,
