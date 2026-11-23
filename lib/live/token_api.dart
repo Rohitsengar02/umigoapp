@@ -43,7 +43,7 @@ class TokenApi {
           headers: {'content-type': 'application/json'},
           body: jsonEncode({'room': room, 'identity': identity, 'name': name, 'role': host ? 'host' : 'viewer', 'title': title, 'tag': tag}),
         )
-        .timeout(const Duration(seconds: 12));
+        .timeout(const Duration(seconds: 60)); // free hosting can take ~30s to wake up
     if (r.statusCode != 200) {
       throw Exception('Token server said ${r.statusCode}: ${r.body}');
     }
@@ -52,7 +52,7 @@ class TokenApi {
   }
 
   static Future<List<LiveRoomInfo>> rooms() async {
-    final r = await http.get(Uri.parse('$_base/rooms')).timeout(const Duration(seconds: 8));
+    final r = await http.get(Uri.parse('$_base/rooms')).timeout(const Duration(seconds: 45));
     if (r.statusCode != 200) throw Exception('rooms ${r.statusCode}');
     final list = (jsonDecode(r.body) as Map<String, dynamic>)['rooms'] as List;
     return list.map((e) {
@@ -71,7 +71,7 @@ class TokenApi {
 
   static Future<bool> health() async {
     try {
-      final r = await http.get(Uri.parse('$_base/health')).timeout(const Duration(seconds: 6));
+      final r = await http.get(Uri.parse('$_base/health')).timeout(const Duration(seconds: 45));
       return r.statusCode == 200;
     } catch (_) {
       return false;

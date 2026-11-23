@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Default live server addresses. Override at build time:
 ///   flutter build apk --dart-define=TOKEN_URL=https://live.example.com/api
 /// or change them inside the app: Profile > Live server.
-const _defaultTokenUrl = String.fromEnvironment('TOKEN_URL', defaultValue: '');
+const _defaultTokenUrl = String.fromEnvironment('TOKEN_URL', defaultValue: 'https://umigo-token.onrender.com');
 
 /// One global store for the demo: wallet, profile and server settings.
 class AppState extends ChangeNotifier {
@@ -52,7 +52,8 @@ class AppState extends ChangeNotifier {
     username = p.getString('username') ?? username;
     coins = p.getInt('coins') ?? coins;
     diamonds = p.getInt('diamonds') ?? diamonds;
-    tokenUrl = p.getString('tokenUrl') ?? tokenUrl;
+    final savedUrl = p.getString('tokenUrl') ?? '';
+    if (savedUrl.isNotEmpty) tokenUrl = savedUrl; // empty means "never set", so use the built-in server
     interests = p.getStringList('interests') ?? interests;
     for (final f in p.getStringList('following') ?? const <String>[]) {
       final i = f.indexOf('|');
