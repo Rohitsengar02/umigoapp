@@ -12,6 +12,7 @@
 //
 // Later this logic moves into the NestJS backend (auth, wallet, gifts in Postgres).
 import http from 'node:http';
+import { readFileSync } from 'node:fs';
 import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 
 const KEY = process.env.LIVEKIT_API_KEY || 'devkey';
@@ -21,6 +22,16 @@ const PUBLIC_URL = process.env.LIVEKIT_PUBLIC_URL || 'ws://127.0.0.1:7880';
 const PORT = Number(process.env.PORT || 3001);
 
 const rooms = new RoomServiceClient(HOST, KEY, SECRET);
+// Bans written by the Umi Guard moderator (server/moderator/data/bans.json).
+const BANS = process.env.BANS_FILE || new URL('../moderator/data/bans.json', import.meta.url).pathname;
+function activeBan(identity) {
+  try {
+    const b = JSON.parse(readFileSync(BANS, 'utf8'))[String(identity).split('~')[0]];
+    return b && b.until > Date.now() ? b : null;
+  } catch {
+    return null;
+  }
+}
 
 const send = (res, code, body) => {
   res.writeHead(code, {
@@ -48,7 +59,7 @@ const readJson = (req) =>
     });
   });
 
-const clean = (s, max = 64) => String(s ?? '').replace(/[^\p{L}\p{N} ._\-#!?,'&]/gu, '').slice(0, max);
+const clean = (s, max = 64) => String(s ?? '').replace(/[^\p{L}\p{N} ._\-#!?,'&~]/gu, '').slice(0, max);
 
 async function issueToken(body) {
   const room = clean(body.room, 80).replace(/\s/g, '_');
@@ -56,6 +67,12 @@ async function issueToken(body) {
   if (!room || !identity) throw Object.assign(new Error('room and identity are required'), { code: 400 });
   const host = body.role === 'host';
   const name = clean(body.name, 40) || 'Guest';
+  if (identity.startsWith('umi-guard')) throw Object.assign(new Error('reserved identity'), { code: 400 });
+  const b = activeBan(identity);
+  if (b && (b.scope === 'all' || host)) {
+    const mins = Math.ceil((b.until - Date.now()) / 60000);
+    throw Object.assign(new Error(`You are blocked for ${mins} more min (${b.reason})`), { code: 403 });
+  }
 
   if (host) {
     // Create (or update) the room with metadata the Home feed shows.
@@ -97,9 +114,11 @@ async function listRooms() {
     if (!meta.hostId) continue; // only Umigo live rooms
     // only show rooms whose host is actually in the room
     let hostHere = false;
+    let viewers = 0;
     try {
       const ps = await rooms.listParticipants(r.name);
       hostHere = ps.some((p) => p.identity === meta.hostId);
+      viewers = ps.filter((p) => p.identity !== meta.hostId && !p.identity.startsWith('umi-guard')).length;
     } catch {
       /* ignore */
     }
@@ -110,7 +129,7 @@ async function listRooms() {
       tag: meta.tag || '',
       hostName: meta.hostName || 'Host',
       hostId: meta.hostId,
-      viewers: Math.max(0, (r.numParticipants || 1) - 1),
+      viewers,
     });
   }
   return out;

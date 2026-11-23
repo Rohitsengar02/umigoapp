@@ -55,6 +55,7 @@ if command -v ufw >/dev/null; then
   ufw allow 7881/tcp; ufw allow 50000:60000/udp
 fi
 
+mkdir -p data/mod && [ -f data/mod/bans.json ] || echo '{}' > data/mod/bans.json
 docker compose up -d --build
 echo
 echo "Done. In the Umigo app go to Me > Live server and paste:  https://$DOMAIN/api"

@@ -1,0 +1,37 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      token_url:
+        description: 'Token server URL baked into the app (optional), e.g. https://live.example.com/api'
+        required: false
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: flutter pub get
+      - run: flutter test
+      - run: flutter build apk --release --split-per-abi --dart-define=TOKEN_URL=${{ github.event.inputs.token_url || vars.TOKEN_URL || '' }}
+      - run: flutter build apk --release --dart-define=TOKEN_URL=${{ github.event.inputs.token_url || vars.TOKEN_URL || '' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: umigo-apk
+          path: build/app/outputs/flutter-apk/*.apk
+      - name: Publish as a GitHub release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Umigo build ${{ github.run_number }}
+          files: build/app/outputs/flutter-apk/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+permissions:
+  contents: write

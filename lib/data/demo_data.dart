@@ -6,7 +6,6 @@ class Host {
   const Host(this.id, this.name, this.img, this.title, this.where, this.views, this.cat, {this.posY = -0.4});
 }
 
-
 const demoHosts = <Host>[
   Host('priya', 'Priya.r', 'assets/img/priya.jpg', 'Late night acoustic covers', 'Mumbai', '12.4K', 'Music', posY: -0.6),
   Host('kabir', 'Kabir_v', 'assets/img/kabir.jpg', 'Café chats, ask me anything', 'Delhi', '8.1K', 'Chat'),

@@ -23,11 +23,7 @@ class LiveVideo extends StatelessWidget {
     if (t != null) {
       return ColoredBox(
         color: UC.ink,
-        child: VideoTrackRenderer(
-          t,
-          fit: VideoViewFit.cover,
-          mirrorMode: mirror ? VideoViewMirrorMode.mirror : VideoViewMirrorMode.off,
-        ),
+        child: VideoTrackRenderer(t, fit: VideoViewFit.cover, mirrorMode: mirror ? VideoViewMirrorMode.mirror : VideoViewMirrorMode.off),
       );
     }
     if (fallbackImg != null) {
@@ -35,7 +31,9 @@ class LiveVideo extends StatelessWidget {
       return heroTag == null ? img : Hero(tag: heroTag!, child: img);
     }
     return Container(
-      decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [UC.deep, UC.ink])),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [UC.deep, UC.ink]),
+      ),
     );
   }
 }
@@ -44,24 +42,25 @@ class ShadeOverlay extends StatelessWidget {
   const ShadeOverlay({super.key});
   @override
   Widget build(BuildContext context) => IgnorePointer(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [UC.inkA(.55), UC.inkA(0), UC.inkA(0), UC.inkA(.82)],
-              stops: const [0, .22, .46, 1],
-            ),
-          ),
-          child: const SizedBox.expand(),
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [UC.inkA(.55), UC.inkA(0), UC.inkA(0), UC.inkA(.82)],
+          stops: const [0, .22, .46, 1],
         ),
-      );
+      ),
+      child: const SizedBox.expand(),
+    ),
+  );
 }
 
 /// Scrolling live chat (newest at the bottom).
 class ChatFeed extends StatelessWidget {
   final List<LiveEvent> events;
-  const ChatFeed({super.key, required this.events});
+  final void Function(LiveEvent e)? onTap;
+  const ChatFeed({super.key, required this.events, this.onTap});
   @override
   Widget build(BuildContext context) {
     final list = events.where((e) => e.type != LiveEventType.like).toList();
@@ -77,57 +76,96 @@ class ChatFeed extends StatelessWidget {
         reverse: true,
         padding: const EdgeInsets.only(top: 30),
         itemCount: list.length,
-        itemBuilder: (_, i) => _line(list[list.length - 1 - i]),
+        itemBuilder: (_, i) {
+          final e = list[list.length - 1 - i];
+          final tappable = onTap != null && e.type == LiveEventType.chat && !e.mine;
+          return tappable ? GestureDetector(onTap: () => onTap!(e), child: _line(e)) : _line(e);
+        },
       ),
     );
   }
 
   Widget _line(LiveEvent e) {
+    if (e.type == LiveEventType.mod) {
+      return _bubble(UC.inkA(.0), const Color(0x8C6B4A6E), [
+        const WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(
+            padding: EdgeInsets.only(right: 5),
+            child: Icon(Icons.shield_rounded, size: 13, color: UC.gold),
+          ),
+        ),
+        TextSpan(
+          text: '${e.name} ',
+          style: ts(12, w: FontWeight.w800, c: UC.gold, h: 1.4),
+        ),
+        TextSpan(
+          text: e.text,
+          style: ts(12, w: FontWeight.w700, c: Colors.white, h: 1.4),
+        ),
+      ]);
+    }
     if (e.type == LiveEventType.system) {
       return _bubble(UC.inkA(.0), Colors.white.withValues(alpha: .14), [
-        TextSpan(text: e.text, style: ts(12, w: FontWeight.w600, c: Colors.white, h: 1.4)),
+        TextSpan(
+          text: e.text,
+          style: ts(12, w: FontWeight.w600, c: Colors.white, h: 1.4),
+        ),
       ]);
     }
     final gift = e.type == LiveEventType.gift;
-    final lvBg = e.lv > 30 ? UC.accentText : e.lv > 10 ? UC.primary : UC.deep;
-    final nameColor = e.mine ? const Color(0xFFFFD27A) : gift ? const Color(0xFFFFE2B8) : const Color(0xFFFFC4E3);
+    final lvBg = e.lv > 30
+        ? UC.accentText
+        : e.lv > 10
+        ? UC.primary
+        : UC.deep;
+    final nameColor = e.mine
+        ? const Color(0xFFFFD27A)
+        : gift
+        ? const Color(0xFFFFE2B8)
+        : const Color(0xFFFFC4E3);
     final text = switch (e.type) {
       LiveEventType.gift => 'sent ${giftById(e.giftId).name}${e.qty > 1 ? ' ×${e.qty}' : ''}',
       _ => e.text,
     };
-    return _bubble(
-      Colors.transparent,
-      gift ? const Color(0x6BFF9F80) : UC.inkA(.42),
-      [
-        WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: Container(
-            margin: const EdgeInsets.only(right: 5),
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-            decoration: BoxDecoration(color: lvBg, borderRadius: BorderRadius.circular(4)),
-            child: Text('Lv ${e.lv}', style: ts(9.5, w: FontWeight.w800, c: Colors.white)),
+    return _bubble(Colors.transparent, gift ? const Color(0x6BFF9F80) : UC.inkA(.42), [
+      WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: Container(
+          margin: const EdgeInsets.only(right: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+          decoration: BoxDecoration(color: lvBg, borderRadius: BorderRadius.circular(4)),
+          child: Text(
+            'Lv ${e.lv}',
+            style: ts(9.5, w: FontWeight.w800, c: Colors.white),
           ),
         ),
-        TextSpan(text: '${e.name} ', style: ts(12.5, w: FontWeight.w800, c: nameColor)),
-        TextSpan(text: text, style: ts(12.5, w: FontWeight.w600, c: Colors.white, h: 1.35)),
-        if (gift)
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Padding(padding: const EdgeInsets.only(left: 4), child: GiftIcon(e.giftId, size: 16)),
-          ),
-      ],
-    );
+      ),
+      TextSpan(
+        text: '${e.name} ',
+        style: ts(12.5, w: FontWeight.w800, c: nameColor),
+      ),
+      TextSpan(
+        text: text,
+        style: ts(12.5, w: FontWeight.w600, c: e.masked ? Colors.white.withValues(alpha: .8) : Colors.white, h: 1.35),
+      ),
+      if (gift)
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(padding: const EdgeInsets.only(left: 4), child: GiftIcon(e.giftId, size: 16)),
+        ),
+    ]);
   }
 
   Widget _bubble(Color _, Color bg, List<InlineSpan> spans) => Align(
-        alignment: Alignment.centerLeft,
-        child: Container(
-          margin: const EdgeInsets.only(top: 5),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-          child: Text.rich(TextSpan(children: spans)),
-        ),
-      );
+    alignment: Alignment.centerLeft,
+    child: Container(
+      margin: const EdgeInsets.only(top: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+      child: Text.rich(TextSpan(children: spans)),
+    ),
+  );
 }
 
 /// Slide-in "X sent Rocket ×3" banner plus a big centre animation for pricey gifts.
@@ -182,69 +220,96 @@ class _GiftOverlayState extends State<GiftOverlay> with TickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-      child: Stack(children: [
-        if (_cur != null)
-          Positioned(
-            left: 10,
-            top: 0,
-            child: AnimatedBuilder(
-              animation: _slide,
-              builder: (_, child) {
-                final v = _slide.value;
-                final x = v < .12 ? (1 - v / .12) : v > .85 ? (v - .85) / .15 : 0.0;
-                return Transform.translate(offset: Offset(-320 * x, 0), child: child);
-              },
-              child: _banner(_cur!),
+      child: Stack(
+        children: [
+          if (_cur != null)
+            Positioned(
+              left: 10,
+              top: 0,
+              child: AnimatedBuilder(
+                animation: _slide,
+                builder: (_, child) {
+                  final v = _slide.value;
+                  final x = v < .12
+                      ? (1 - v / .12)
+                      : v > .85
+                      ? (v - .85) / .15
+                      : 0.0;
+                  return Transform.translate(offset: Offset(-320 * x, 0), child: child);
+                },
+                child: _banner(_cur!),
+              ),
             ),
-          ),
-        if (_bigEv != null)
-          Center(
-            child: AnimatedBuilder(
-              animation: _big,
-              builder: (_, _) {
-                final v = _big.value;
-                final scale = Curves.elasticOut.transform((v * 1.6).clamp(0, 1)) * (1 + .1 * sin(v * 12));
-                final op = v < .8 ? 1.0 : (1 - (v - .8) / .2);
-                return Opacity(
-                  opacity: op.clamp(0, 1),
-                  child: Transform.scale(
-                    scale: scale,
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      GiftIcon(_bigEv!.giftId, size: 150),
-                      Text('${_bigEv!.name} · ${giftById(_bigEv!.giftId).name}${_bigEv!.qty > 1 ? ' ×${_bigEv!.qty}' : ''}',
-                          style: ts(18, w: FontWeight.w800, c: Colors.white).copyWith(shadows: [Shadow(color: UC.inkA(.6), blurRadius: 8)])),
-                    ]),
-                  ),
-                );
-              },
+          if (_bigEv != null)
+            Center(
+              child: AnimatedBuilder(
+                animation: _big,
+                builder: (_, _) {
+                  final v = _big.value;
+                  final scale = Curves.elasticOut.transform((v * 1.6).clamp(0, 1)) * (1 + .1 * sin(v * 12));
+                  final op = v < .8 ? 1.0 : (1 - (v - .8) / .2);
+                  return Opacity(
+                    opacity: op.clamp(0, 1),
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GiftIcon(_bigEv!.giftId, size: 150),
+                          Text(
+                            '${_bigEv!.name} · ${giftById(_bigEv!.giftId).name}${_bigEv!.qty > 1 ? ' ×${_bigEv!.qty}' : ''}',
+                            style: ts(18, w: FontWeight.w800, c: Colors.white).copyWith(shadows: [Shadow(color: UC.inkA(.6), blurRadius: 8)]),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-      ]),
+        ],
+      ),
     );
   }
 
   Widget _banner(LiveEvent e) => Container(
-        height: 52,
-        padding: const EdgeInsets.only(left: 6, right: 14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [UC.primary, UC.primary.withValues(alpha: 0)]),
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Avatar(name: e.name, size: 40, border: Colors.white),
-          const SizedBox(width: 8),
-          Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(e.name, style: ts(13, w: FontWeight.w800, c: Colors.white)),
-            Text('sent a ${giftById(e.giftId).name}', style: ts(11.5, w: FontWeight.w700, c: Colors.white.withValues(alpha: .9))),
-          ]),
-          const SizedBox(width: 8),
-          GiftIcon(e.giftId, size: 38),
-          if (e.qty > 1) ...[
-            const SizedBox(width: 4),
-            Text('×${e.qty}', style: ts(26, w: FontWeight.w800, c: UC.gold).copyWith(fontStyle: FontStyle.italic)),
+    height: 52,
+    padding: const EdgeInsets.only(left: 6, right: 14),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(colors: [UC.primary, UC.primary.withValues(alpha: 0)]),
+      borderRadius: BorderRadius.circular(99),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Avatar(name: e.name, size: 40, border: Colors.white),
+        const SizedBox(width: 8),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              e.name,
+              style: ts(13, w: FontWeight.w800, c: Colors.white),
+            ),
+            Text(
+              'sent a ${giftById(e.giftId).name}',
+              style: ts(11.5, w: FontWeight.w700, c: Colors.white.withValues(alpha: .9)),
+            ),
           ],
-        ]),
-      );
+        ),
+        const SizedBox(width: 8),
+        GiftIcon(e.giftId, size: 38),
+        if (e.qty > 1) ...[
+          const SizedBox(width: 4),
+          Text(
+            '×${e.qty}',
+            style: ts(26, w: FontWeight.w800, c: UC.gold).copyWith(fontStyle: FontStyle.italic),
+          ),
+        ],
+      ],
+    ),
+  );
 }
 
 /// Hearts that float up from the like button.
@@ -268,7 +333,10 @@ class _FloatingHeartsState extends State<FloatingHearts> with TickerProviderStat
 
   void _add() {
     if (_hearts.length > 18) return;
-    final c = AnimationController(vsync: this, duration: Duration(milliseconds: 2000 + _rnd.nextInt(900)));
+    final c = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 2000 + _rnd.nextInt(900)),
+    );
     final item = (c, (_rnd.nextDouble() - .5) * 50, [UC.primary, UC.accent, Colors.white, UC.gold][_rnd.nextInt(4)]);
     setState(() => _hearts.add(item));
     c.forward().then((_) {
@@ -289,28 +357,34 @@ class _FloatingHeartsState extends State<FloatingHearts> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) => IgnorePointer(
-        child: SizedBox(
-          width: 80,
-          height: 260,
-          child: Stack(clipBehavior: Clip.none, children: [
-            for (final h in _hearts)
-              AnimatedBuilder(
-                animation: h.$1,
-                builder: (_, _) {
-                  final v = h.$1.value;
-                  return Positioned(
-                    left: 28 + h.$2 * v + 8 * sin(v * 9),
-                    bottom: v * 240,
-                    child: Opacity(
-                      opacity: v < .15 ? v / .15 : (1 - v).clamp(0, 1),
-                      child: Transform.scale(scale: .6 + v * .5, child: Icon(Icons.favorite_rounded, color: h.$3, size: 26)),
+    child: SizedBox(
+      width: 80,
+      height: 260,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          for (final h in _hearts)
+            AnimatedBuilder(
+              animation: h.$1,
+              builder: (_, _) {
+                final v = h.$1.value;
+                return Positioned(
+                  left: 28 + h.$2 * v + 8 * sin(v * 9),
+                  bottom: v * 240,
+                  child: Opacity(
+                    opacity: v < .15 ? v / .15 : (1 - v).clamp(0, 1),
+                    child: Transform.scale(
+                      scale: .6 + v * .5,
+                      child: Icon(Icons.favorite_rounded, color: h.$3, size: 26),
                     ),
-                  );
-                },
-              ),
-          ]),
-        ),
-      );
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 class GlassPill extends StatelessWidget {
@@ -320,11 +394,11 @@ class GlassPill extends StatelessWidget {
   const GlassPill({super.key, required this.child, this.padding = const EdgeInsets.symmetric(horizontal: 10), this.height = 26});
   @override
   Widget build(BuildContext context) => Container(
-        height: height,
-        padding: padding,
-        decoration: BoxDecoration(color: UC.inkA(.45), borderRadius: BorderRadius.circular(99)),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [child]),
-      );
+    height: height,
+    padding: padding,
+    decoration: BoxDecoration(color: UC.inkA(.45), borderRadius: BorderRadius.circular(99)),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [child]),
+  );
 }
 
 class RoundGlassButton extends StatelessWidget {
@@ -337,19 +411,15 @@ class RoundGlassButton extends StatelessWidget {
   const RoundGlassButton(this.icon, {super.key, required this.onTap, required this.tooltip, this.color, this.gradient, this.size = 44});
   @override
   Widget build(BuildContext context) => Tooltip(
-        message: tooltip,
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: gradient == null ? UC.inkA(.5) : null,
-              gradient: gradient,
-            ),
-            child: Icon(icon, color: color ?? Colors.white, size: size * .5),
-          ),
-        ),
-      );
+    message: tooltip,
+    child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: gradient == null ? UC.inkA(.5) : null, gradient: gradient),
+        child: Icon(icon, color: color ?? Colors.white, size: size * .5),
+      ),
+    ),
+  );
 }

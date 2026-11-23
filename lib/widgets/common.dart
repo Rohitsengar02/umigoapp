@@ -8,14 +8,14 @@ class CoinDot extends StatelessWidget {
   const CoinDot({super.key, this.size = 18});
   @override
   Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: UC.coinGradient,
-          border: Border.all(color: Colors.white.withValues(alpha: .45), width: size / 7),
-        ),
-      );
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: UC.coinGradient,
+      border: Border.all(color: Colors.white.withValues(alpha: .45), width: size / 7),
+    ),
+  );
 }
 
 class DiamondIcon extends StatelessWidget {
@@ -33,8 +33,7 @@ class LiveBadge extends StatefulWidget {
 }
 
 class _LiveBadgeState extends State<LiveBadge> with SingleTickerProviderStateMixin {
-  late final AnimationController c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))
-    ..repeat(reverse: true);
+  late final AnimationController c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
   @override
   void dispose() {
     c.dispose();
@@ -48,14 +47,24 @@ class _LiveBadgeState extends State<LiveBadge> with SingleTickerProviderStateMix
       height: 20 * s,
       padding: EdgeInsets.symmetric(horizontal: 7 * s),
       decoration: BoxDecoration(color: UC.primary, borderRadius: BorderRadius.circular(6 * s)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        FadeTransition(
-          opacity: Tween(begin: 1.0, end: .35).animate(c),
-          child: Container(width: 5 * s, height: 5 * s, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
-        ),
-        SizedBox(width: 4 * s),
-        Text('LIVE', style: ts(10 * s, w: FontWeight.w800, c: Colors.white, ls: 1)),
-      ]),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FadeTransition(
+            opacity: Tween(begin: 1.0, end: .35).animate(c),
+            child: Container(
+              width: 5 * s,
+              height: 5 * s,
+              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            ),
+          ),
+          SizedBox(width: 4 * s),
+          Text(
+            'LIVE',
+            style: ts(10 * s, w: FontWeight.w800, c: Colors.white, ls: 1),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -74,8 +83,10 @@ class Avatar extends StatelessWidget {
         : Container(
             color: UC.deep,
             alignment: Alignment.center,
-            child: Text(name.isEmpty ? '?' : name.characters.first.toUpperCase(),
-                style: ts(size * .42, w: FontWeight.w800, c: Colors.white)),
+            child: Text(
+              name.isEmpty ? '?' : name.characters.first.toUpperCase(),
+              style: ts(size * .42, w: FontWeight.w800, c: Colors.white),
+            ),
           );
     return Container(
       width: size,
@@ -96,27 +107,29 @@ class PrimaryButton extends StatelessWidget {
   final Color fg;
   final double height;
   final IconData? icon;
-  const PrimaryButton(this.label,
-      {super.key, this.onTap, this.color = UC.primary, this.fg = Colors.white, this.height = 54, this.icon});
+  const PrimaryButton(this.label, {super.key, this.onTap, this.color = UC.primary, this.fg = Colors.white, this.height = 54, this.icon});
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: height,
-        width: double.infinity,
-        child: FilledButton(
-          onPressed: onTap,
-          style: FilledButton.styleFrom(
-            backgroundColor: color,
-            foregroundColor: fg,
-            disabledBackgroundColor: color.withValues(alpha: .45),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
-            textStyle: ts(16, w: FontWeight.w800),
-          ),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: 8)],
-            Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
-          ]),
-        ),
-      );
+    height: height,
+    width: double.infinity,
+    child: FilledButton(
+      onPressed: onTap,
+      style: FilledButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: fg,
+        disabledBackgroundColor: color.withValues(alpha: .45),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
+        textStyle: ts(16, w: FontWeight.w800),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: 8)],
+          Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+    ),
+  );
 }
 
 class ChoiceChipX extends StatelessWidget {
@@ -127,20 +140,23 @@ class ChoiceChipX extends StatelessWidget {
   const ChoiceChipX(this.label, {super.key, required this.on, required this.onTap, this.pill = true});
   @override
   Widget build(BuildContext context) => Material(
-        color: on ? UC.soft : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(pill ? 99 : 12),
-          side: BorderSide(color: on ? UC.primary : UC.line, width: 1.5),
+    color: on ? UC.soft : Colors.white,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(pill ? 99 : 12),
+      side: BorderSide(color: on ? UC.primary : UC.line, width: 1.5),
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(pill ? 99 : 12),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Text(
+          label,
+          style: ts(13, w: FontWeight.w800, c: on ? UC.deep : UC.ink),
         ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(pill ? 99 : 12),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Text(label, style: ts(13, w: FontWeight.w800, c: on ? UC.deep : UC.ink)),
-          ),
-        ),
-      );
+      ),
+    ),
+  );
 }
 
 /// Segmented tabs on a soft background (Phone/Email, Activity/Messages...).
@@ -152,30 +168,33 @@ class Segmented extends StatelessWidget {
   const Segmented({super.key, required this.items, required this.value, required this.onChanged, this.bg = UC.surface});
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(13)),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final i in items)
-              GestureDetector(
-                onTap: () => onChanged(i),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  height: 34,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: i == value ? Colors.white : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: i == value ? [BoxShadow(color: UC.inkA(.08), blurRadius: 8, offset: const Offset(0, 2))] : null,
-                  ),
-                  child: Text(i, style: ts(13, w: FontWeight.w800, c: i == value ? UC.ink : UC.muted)),
-                ),
+    padding: const EdgeInsets.all(3),
+    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(13)),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final i in items)
+          GestureDetector(
+            onTap: () => onChanged(i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              height: 34,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: i == value ? Colors.white : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: i == value ? [BoxShadow(color: UC.inkA(.08), blurRadius: 8, offset: const Offset(0, 2))] : null,
               ),
-          ],
-        ),
-      );
+              child: Text(
+                i,
+                style: ts(13, w: FontWeight.w800, c: i == value ? UC.ink : UC.muted),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 /// Labelled text field used in login/register.
@@ -208,41 +227,49 @@ class FieldBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final focused = focus?.hasFocus ?? false;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: ts(12.5, w: FontWeight.w800, c: UC.muted)),
-      const SizedBox(height: 6),
-      AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        height: 52,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: error ? UC.red : (focused ? UC.primary : UC.line), width: focused || error ? 2 : 1.5),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: ts(12.5, w: FontWeight.w800, c: UC.muted),
         ),
-        child: Row(children: [
-          if (prefix != null) ...[prefix!, const SizedBox(width: 8)],
-          Expanded(
-            child: TextField(
-              controller: controller,
-              focusNode: focus,
-              obscureText: obscure,
-              keyboardType: type,
-              maxLength: maxLength,
-              onChanged: onChanged,
-              style: ts(15, w: FontWeight.w700, c: UC.ink),
-              cursorColor: UC.primary,
-              decoration: InputDecoration(
-                hintText: hint,
-                counterText: '',
-                hintStyle: ts(15, w: FontWeight.w600, c: UC.muted.withValues(alpha: .6)),
-              ),
-            ),
+        const SizedBox(height: 6),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: error ? UC.red : (focused ? UC.primary : UC.line), width: focused || error ? 2 : 1.5),
           ),
-          if (suffix != null) suffix!,
-        ]),
-      ),
-    ]);
+          child: Row(
+            children: [
+              if (prefix != null) ...[prefix!, const SizedBox(width: 8)],
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  focusNode: focus,
+                  obscureText: obscure,
+                  keyboardType: type,
+                  maxLength: maxLength,
+                  onChanged: onChanged,
+                  style: ts(15, w: FontWeight.w700, c: UC.ink),
+                  cursorColor: UC.primary,
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    counterText: '',
+                    hintStyle: ts(15, w: FontWeight.w600, c: UC.muted.withValues(alpha: .6)),
+                  ),
+                ),
+              ),
+              if (suffix != null) suffix!,
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -253,27 +280,33 @@ class CoinPill extends StatelessWidget {
   const CoinPill(this.amount, {super.key, this.onTap, this.plus = true});
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          height: 38,
-          padding: EdgeInsets.only(left: 8, right: plus ? 5 : 12),
-          decoration: BoxDecoration(color: UC.accentSoft, borderRadius: BorderRadius.circular(99)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const CoinDot(size: 20),
+    onTap: onTap,
+    child: Container(
+      height: 38,
+      padding: EdgeInsets.only(left: 8, right: plus ? 5 : 12),
+      decoration: BoxDecoration(color: UC.accentSoft, borderRadius: BorderRadius.circular(99)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CoinDot(size: 20),
+          const SizedBox(width: 6),
+          Text(
+            fmtIn(amount),
+            style: ts(14, w: FontWeight.w800, c: UC.accentText),
+          ),
+          if (plus) ...[
             const SizedBox(width: 6),
-            Text(fmtIn(amount), style: ts(14, w: FontWeight.w800, c: UC.accentText)),
-            if (plus) ...[
-              const SizedBox(width: 6),
-              Container(
-                width: 28,
-                height: 28,
-                decoration: const BoxDecoration(color: UC.primary, shape: BoxShape.circle),
-                child: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
-              ),
-            ],
-          ]),
-        ),
-      );
+            Container(
+              width: 28,
+              height: 28,
+              decoration: const BoxDecoration(color: UC.primary, shape: BoxShape.circle),
+              child: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 /// A back button + title row used by inner screens.
@@ -284,17 +317,24 @@ class TopBar extends StatelessWidget {
   const TopBar(this.title, {super.key, this.actions = const [], this.fg = UC.ink});
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(6, 8, 12, 8),
-        child: Row(children: [
-          IconButton(
-            tooltip: 'Back',
-            onPressed: () => Navigator.maybePop(context),
-            icon: Icon(Icons.arrow_back_rounded, color: fg),
+    padding: const EdgeInsets.fromLTRB(6, 8, 12, 8),
+    child: Row(
+      children: [
+        IconButton(
+          tooltip: 'Back',
+          onPressed: () => Navigator.maybePop(context),
+          icon: Icon(Icons.arrow_back_rounded, color: fg),
+        ),
+        Expanded(
+          child: Text(
+            title,
+            style: ts(20, w: FontWeight.w800, c: fg, ls: -0.5),
           ),
-          Expanded(child: Text(title, style: ts(20, w: FontWeight.w800, c: fg, ls: -0.5))),
-          ...actions,
-        ]),
-      );
+        ),
+        ...actions,
+      ],
+    ),
+  );
 }
 
 void toast(BuildContext context, String msg) {

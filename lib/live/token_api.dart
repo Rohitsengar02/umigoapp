@@ -12,14 +12,7 @@ class TokenGrant {
 class LiveRoomInfo {
   final String name, title, hostName, hostId, tag;
   final int viewers;
-  LiveRoomInfo({
-    required this.name,
-    required this.title,
-    required this.hostName,
-    required this.hostId,
-    required this.tag,
-    required this.viewers,
-  });
+  LiveRoomInfo({required this.name, required this.title, required this.hostName, required this.hostId, required this.tag, required this.viewers});
 }
 
 /// Talks to the tiny Umigo token server (server/token-server). It signs LiveKit
@@ -39,14 +32,7 @@ class TokenApi {
         .post(
           Uri.parse('$_base/token'),
           headers: {'content-type': 'application/json'},
-          body: jsonEncode({
-            'room': room,
-            'identity': identity,
-            'name': name,
-            'role': host ? 'host' : 'viewer',
-            'title': title,
-            'tag': tag,
-          }),
+          body: jsonEncode({'room': room, 'identity': identity, 'name': name, 'role': host ? 'host' : 'viewer', 'title': title, 'tag': tag}),
         )
         .timeout(const Duration(seconds: 12));
     if (r.statusCode != 200) {

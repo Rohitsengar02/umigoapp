@@ -5,6 +5,7 @@ import '../live/live_session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/live_widgets.dart';
+import '../widgets/mod_widgets.dart';
 import 'gift_sheet.dart';
 
 /// Watching someone live: video, chat, likes, gifts.
@@ -41,8 +42,10 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
   }
 
   void send() {
-    s.sendChat(draft.text);
-    draft.clear();
+    final why = s.sendChat(draft.text);
+    if (why != null) toast(context, why);
+    // keep the text if it was stopped so the viewer can fix it
+    if (why == null || why.startsWith('Some words')) draft.clear();
   }
 
   @override
@@ -54,157 +57,237 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
       resizeToAvoidBottomInset: true,
       body: ListenableBuilder(
         listenable: s,
-        builder: (context, _) => Stack(children: [
-          Positioned.fill(
-            child: GestureDetector(
-              onDoubleTap: s.sendLike,
-              child: LiveVideo(track: s.remoteVideo, fallbackImg: h?.img, heroTag: h == null ? null : 'live_${h.id}'),
+        builder: (context, _) => Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                onDoubleTap: s.sendLike,
+                child: LiveVideo(track: s.remoteVideo, fallbackImg: h?.img, heroTag: h == null ? null : 'live_${h.id}'),
+              ),
             ),
-          ),
-          const Positioned.fill(child: ShadeOverlay()),
-          // header
-          Positioned(
-            left: 10,
-            right: 10,
-            top: pad.top + 10,
-            child: Row(children: [
-              Container(
-                height: 42,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(color: UC.inkA(.45), borderRadius: BorderRadius.circular(99)),
-                child: Row(children: [
-                  Avatar(img: h?.img, name: s.hostName, size: 34, border: UC.primary),
-                  const SizedBox(width: 8),
-                  Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(s.hostName, style: ts(13, w: FontWeight.w800, c: Colors.white)),
-                    Text('${fmtK(s.viewers)} watching', style: ts(11, w: FontWeight.w700, c: Colors.white.withValues(alpha: .85))),
-                  ]),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => setState(() => following = !following),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      height: 32,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: following ? Colors.white.withValues(alpha: .2) : UC.primary,
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: Text(following ? 'Following' : '+ Follow', style: ts(12.5, w: FontWeight.w800, c: Colors.white)),
+            if (s.videoBlocked) const Positioned.fill(child: VideoBlockedOverlay()),
+            const Positioned.fill(child: ShadeOverlay()),
+            // header
+            Positioned(
+              left: 10,
+              right: 10,
+              top: pad.top + 10,
+              child: Row(
+                children: [
+                  Container(
+                    height: 42,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(color: UC.inkA(.45), borderRadius: BorderRadius.circular(99)),
+                    child: Row(
+                      children: [
+                        Avatar(img: h?.img, name: s.hostName, size: 34, border: UC.primary),
+                        const SizedBox(width: 8),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              s.hostName,
+                              style: ts(13, w: FontWeight.w800, c: Colors.white),
+                            ),
+                            Text(
+                              '${fmtK(s.viewers)} watching',
+                              style: ts(11, w: FontWeight.w700, c: Colors.white.withValues(alpha: .85)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => setState(() => following = !following),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 160),
+                            height: 32,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: following ? Colors.white.withValues(alpha: .2) : UC.primary,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Text(
+                              following ? 'Following' : '+ Follow',
+                              style: ts(12.5, w: FontWeight.w800, c: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ]),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: 70,
-                height: 30,
-                child: Stack(children: [
-                  for (var i = 0; i < 3; i++)
-                    Positioned(
-                      right: i * 20.0,
-                      child: Avatar(
-                        img: ['assets/img/sana.jpg', 'assets/img/rahul.jpg', 'assets/img/meera.jpg'][i],
-                        size: 30,
-                        border: [const Color(0xFFE0A27A), const Color(0xFFE4E0EA), UC.gold][i],
-                      ),
+                  const Spacer(),
+                  SizedBox(
+                    width: 70,
+                    height: 30,
+                    child: Stack(
+                      children: [
+                        for (var i = 0; i < 3; i++)
+                          Positioned(
+                            right: i * 20.0,
+                            child: Avatar(
+                              img: ['assets/img/sana.jpg', 'assets/img/rahul.jpg', 'assets/img/meera.jpg'][i],
+                              size: 30,
+                              border: [const Color(0xFFE0A27A), const Color(0xFFE4E0EA), UC.gold][i],
+                            ),
+                          ),
+                      ],
                     ),
-                ]),
-              ),
-              const SizedBox(width: 6),
-              RoundGlassButton(Icons.close_rounded, tooltip: 'Leave live', size: 34, onTap: () => Navigator.pop(context)),
-            ]),
-          ),
-          Positioned(
-            left: 10,
-            top: pad.top + 60,
-            child: Row(children: [
-              GlassPill(
-                child: Row(children: [
-                  const Icon(Icons.emoji_events_rounded, size: 13, color: UC.gold),
-                  const SizedBox(width: 5),
-                  Text('Daily #12', style: ts(11.5, w: FontWeight.w800, c: Colors.white)),
-                ]),
-              ),
-              const SizedBox(width: 6),
-              GlassPill(
-                child: Row(children: [
-                  const DiamondIcon(size: 13),
-                  const SizedBox(width: 5),
-                  Text(fmtK(48200 + s.diamondsEarned), style: ts(11.5, w: FontWeight.w800, c: Colors.white)),
-                ]),
-              ),
-              if (!s.demo) ...[
-                const SizedBox(width: 6),
-                GlassPill(child: Text('REAL LIVE', style: ts(10.5, w: FontWeight.w800, c: UC.gold, ls: .8))),
-              ],
-            ]),
-          ),
-          if (s.connecting)
-            const Center(child: CircularProgressIndicator(color: Colors.white))
-          else if (!s.demo && s.remoteVideo == null)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(30),
-                child: Text(
-                  s.error != null
-                      ? 'Could not join: ${s.error}'
-                      : s.ended
-                          ? '${s.hostName} ended the live.'
-                          : 'Waiting for ${s.hostName}\'s camera…',
-                  textAlign: TextAlign.center,
-                  style: ts(15, w: FontWeight.w700, c: Colors.white),
-                ),
+                  ),
+                  const SizedBox(width: 6),
+                  RoundGlassButton(Icons.close_rounded, tooltip: 'Leave live', size: 34, onTap: () => Navigator.pop(context)),
+                ],
               ),
             ),
-          Positioned(left: 0, right: 0, top: pad.top + 270, child: GiftOverlay(gifts: s.gifts)),
-          Positioned(right: 14, bottom: 80 + pad.bottom, child: FloatingHearts(taps: s.likeTaps)),
-          Positioned(
-            left: 10,
-            width: 280,
-            bottom: 80 + pad.bottom,
-            height: 230,
-            child: ChatFeed(events: s.events),
-          ),
-          // bottom bar
-          Positioned(
-            left: 10,
-            right: 10,
-            bottom: pad.bottom + 18,
-            child: Row(children: [
-              Expanded(
-                child: Container(
-                  height: 44,
-                  padding: const EdgeInsets.only(left: 14, right: 4),
-                  decoration: BoxDecoration(color: UC.inkA(.5), borderRadius: BorderRadius.circular(99)),
-                  child: Row(children: [
-                    Expanded(
-                      child: TextField(
-                        controller: draft,
-                        onSubmitted: (_) => send(),
-                        textInputAction: TextInputAction.send,
-                        style: ts(13.5, w: FontWeight.w600, c: Colors.white),
-                        cursorColor: Colors.white,
-                        decoration: InputDecoration(
-                          hintText: 'Say something nice…',
-                          hintStyle: ts(13.5, w: FontWeight.w600, c: Colors.white.withValues(alpha: .75)),
+            Positioned(
+              left: 10,
+              top: pad.top + 60,
+              child: Row(
+                children: [
+                  GlassPill(
+                    child: Row(
+                      children: [
+                        const Icon(Icons.emoji_events_rounded, size: 13, color: UC.gold),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Daily #12',
+                          style: ts(11.5, w: FontWeight.w800, c: Colors.white),
                         ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  GlassPill(
+                    child: Row(
+                      children: [
+                        const DiamondIcon(size: 13),
+                        const SizedBox(width: 5),
+                        Text(
+                          fmtK(48200 + s.diamondsEarned),
+                          style: ts(11.5, w: FontWeight.w800, c: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  GuardPill(on: s.guardOn),
+                  if (!s.demo) ...[
+                    const SizedBox(width: 6),
+                    GlassPill(
+                      child: Text(
+                        'REAL',
+                        style: ts(10.5, w: FontWeight.w800, c: UC.gold, ls: .8),
                       ),
                     ),
-                    RoundGlassButton(Icons.send_rounded, tooltip: 'Send comment', size: 36, gradient: const LinearGradient(colors: [UC.primary, UC.primary]), onTap: send),
-                  ]),
+                  ],
+                ],
+              ),
+            ),
+            if (s.connecting)
+              const Center(child: CircularProgressIndicator(color: Colors.white))
+            else if (!s.demo && s.remoteVideo == null)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(30),
+                  child: Text(
+                    s.error != null
+                        ? 'Could not join: ${s.error}'
+                        : s.ended
+                        ? '${s.hostName} ended the live.'
+                        : 'Waiting for ${s.hostName}\'s camera…',
+                    textAlign: TextAlign.center,
+                    style: ts(15, w: FontWeight.w700, c: Colors.white),
+                  ),
                 ),
               ),
-              const SizedBox(width: 6),
-              RoundGlassButton(Icons.share_rounded, tooltip: 'Share', onTap: () => toast(context, 'Share link copied (demo)')),
-              const SizedBox(width: 6),
-              RoundGlassButton(Icons.card_giftcard_rounded, tooltip: 'Send a gift', gradient: const LinearGradient(colors: [UC.accent, UC.primary]), onTap: () => showGiftSheet(context, s)),
-              const SizedBox(width: 6),
-              RoundGlassButton(Icons.favorite_rounded, tooltip: 'Like', color: UC.primary, onTap: s.sendLike),
-            ]),
-          ),
-        ]),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: pad.top + 270,
+              child: GiftOverlay(gifts: s.gifts),
+            ),
+            Positioned(
+              right: 14,
+              bottom: 80 + pad.bottom,
+              child: FloatingHearts(taps: s.likeTaps),
+            ),
+            Positioned(
+              left: 10,
+              width: 280,
+              bottom: 80 + pad.bottom,
+              height: 230,
+              child: ChatFeed(
+                events: s.events,
+                onTap: (e) => showReportSheet(context, s, target: e),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: pad.top + 100,
+              child: ModNoticeBanner(notices: s.notices),
+            ),
+            // bottom bar
+            Positioned(
+              left: 10,
+              right: 10,
+              bottom: pad.bottom + 18,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.only(left: 14, right: 4),
+                      decoration: BoxDecoration(color: UC.inkA(.5), borderRadius: BorderRadius.circular(99)),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: draft,
+                              onSubmitted: (_) => send(),
+                              textInputAction: TextInputAction.send,
+                              style: ts(13.5, w: FontWeight.w600, c: Colors.white),
+                              cursorColor: Colors.white,
+                              enabled: !s.chatMuted,
+                              decoration: InputDecoration(
+                                hintText: s.chatMuted
+                                    ? 'You are muted by Umi Guard'
+                                    : s.slowModeSec > 0
+                                    ? 'Slow mode: 1 message / ${s.slowModeSec}s'
+                                    : 'Say something nice…',
+                                hintStyle: ts(13.5, w: FontWeight.w600, c: Colors.white.withValues(alpha: .75)),
+                              ),
+                            ),
+                          ),
+                          RoundGlassButton(
+                            Icons.send_rounded,
+                            tooltip: 'Send comment',
+                            size: 36,
+                            gradient: const LinearGradient(colors: [UC.primary, UC.primary]),
+                            onTap: send,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  RoundGlassButton(Icons.flag_rounded, tooltip: 'Report live', onTap: () => showReportSheet(context, s)),
+                  const SizedBox(width: 6),
+                  RoundGlassButton(
+                    Icons.card_giftcard_rounded,
+                    tooltip: 'Send a gift',
+                    gradient: const LinearGradient(colors: [UC.accent, UC.primary]),
+                    onTap: () => showGiftSheet(context, s),
+                  ),
+                  const SizedBox(width: 6),
+                  RoundGlassButton(Icons.favorite_rounded, tooltip: 'Like', color: UC.primary, onTap: s.sendLike),
+                ],
+              ),
+            ),
+            if (s.endReason != null) Positioned.fill(child: LiveEndedCard(text: s.endReason!)),
+          ],
+        ),
       ),
     );
   }

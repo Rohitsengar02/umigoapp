@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
+import 'widgets/motion.dart';
+
 /// Umigo "Rose Plum" palette (palette A from the approved design board).
 class UC {
   static const primary = Color(0xFFCF3F6C); // rose pink: actions, LIVE
@@ -20,22 +22,19 @@ class UC {
 
   static Color inkA(double o) => ink.withValues(alpha: o);
 
-  static const coinGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [gold, accent],
-  );
-  static const brandGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [primary, accent],
-  );
+  static const coinGradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [gold, accent]);
+  static const brandGradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [primary, accent]);
 }
 
 const kFont = 'Jakarta';
 
 TextStyle ts(double size, {FontWeight w = FontWeight.w700, Color? c, double? ls, double? h}) =>
     TextStyle(fontFamily: kFont, fontSize: size, fontWeight: w, color: c, letterSpacing: ls, height: h);
+
+const kDisplay = 'Display'; // Bricolage Grotesque: headings and big numbers
+
+TextStyle ds(double size, {FontWeight w = FontWeight.w800, Color? c, double? ls, double? h}) =>
+    TextStyle(fontFamily: kDisplay, fontSize: size, fontWeight: w, color: c, letterSpacing: ls ?? -size * .03, height: h ?? 1.05);
 
 ThemeData buildTheme() {
   final base = ThemeData(
@@ -44,6 +43,16 @@ ThemeData buildTheme() {
     colorScheme: ColorScheme.fromSeed(seedColor: UC.primary, primary: UC.primary, surface: Colors.white),
     scaffoldBackgroundColor: Colors.white,
     splashFactory: InkSparkle.splashFactory,
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: UmiPageTransitions(),
+        TargetPlatform.iOS: UmiPageTransitions(),
+        TargetPlatform.linux: UmiPageTransitions(),
+        TargetPlatform.macOS: UmiPageTransitions(),
+        TargetPlatform.windows: UmiPageTransitions(),
+        TargetPlatform.fuchsia: UmiPageTransitions(),
+      },
+    ),
   );
   return base.copyWith(
     textTheme: base.textTheme.apply(bodyColor: UC.ink, displayColor: UC.ink, fontFamily: kFont),

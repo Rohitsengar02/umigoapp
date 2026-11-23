@@ -1,4 +1,5 @@
-# Umigo live stack: open-source LiveKit (media) + Umigo token server + Caddy (free HTTPS).
+# Umigo live stack: open-source LiveKit (media) + Umigo token server + Umi Guard moderator
+# (chat + video) + Caddy (free HTTPS).
 # Everything uses host networking so WebRTC UDP ports work without extra mapping.
 services:
   livekit:
@@ -17,6 +18,22 @@ services:
     environment:
       LIVEKIT_HOST: http://127.0.0.1:7880
       PORT: "3001"
+      BANS_FILE: /data/bans.json
+    volumes:
+      - ./data/mod:/data:ro
+
+  moderator:
+    build: ./moderator
+    network_mode: host
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      LIVEKIT_HOST: http://127.0.0.1:7880
+      DATA_DIR: /data
+      # NSFW_THRESHOLD: "0.7"   # Porn+Hentai score that pauses a camera
+      # CHECK_EVERY_MS: "1000"  # how often each live is checked
+    volumes:
+      - ./data/mod:/data
 
   caddy:
     image: caddy:2

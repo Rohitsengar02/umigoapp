@@ -51,3 +51,6 @@ node_modules/
 server/.env
 server/livekit.yaml
 server/Caddyfile
+server/data/
+server/moderator/data/
+server/**/node_modules/
