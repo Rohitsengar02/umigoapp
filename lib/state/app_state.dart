@@ -33,6 +33,12 @@ class AppState extends ChangeNotifier {
 
   final List<String> history = []; // newest first, simple log of wallet actions
 
+  /// Hosts this user follows: hostId -> display name.
+  final Map<String, String> following = {};
+
+  /// Lives this user watched, newest first: "hostId|hostName|title|epochMs".
+  final List<String> watched = [];
+
   Future<void> load() async {
     try {
       _p = await SharedPreferences.getInstance();
@@ -48,6 +54,11 @@ class AppState extends ChangeNotifier {
     diamonds = p.getInt('diamonds') ?? diamonds;
     tokenUrl = p.getString('tokenUrl') ?? tokenUrl;
     interests = p.getStringList('interests') ?? interests;
+    for (final f in p.getStringList('following') ?? const <String>[]) {
+      final i = f.indexOf('|');
+      if (i > 0) following[f.substring(0, i)] = f.substring(i + 1);
+    }
+    watched.addAll(p.getStringList('watched') ?? const <String>[]);
   }
 
   void _save() {
@@ -60,6 +71,26 @@ class AppState extends ChangeNotifier {
     p.setInt('diamonds', diamonds);
     p.setString('tokenUrl', tokenUrl);
     p.setStringList('interests', interests);
+    p.setStringList('following', [for (final e in following.entries) '${e.key}|${e.value}']);
+    p.setStringList('watched', watched);
+  }
+
+  bool isFollowing(String hostId) => following.containsKey(hostId);
+
+  void toggleFollow(String hostId, String hostName) {
+    if (hostId.isEmpty) return;
+    following.containsKey(hostId) ? following.remove(hostId) : following[hostId] = hostName;
+    _save();
+    notifyListeners();
+  }
+
+  void addWatched(String hostId, String hostName, String title) {
+    if (hostId.isEmpty) return;
+    watched.removeWhere((w) => w.startsWith('$hostId|'));
+    watched.insert(0, '$hostId|$hostName|${title.replaceAll('|', ' ')}|${DateTime.now().millisecondsSinceEpoch}');
+    if (watched.length > 50) watched.removeLast();
+    _save();
+    notifyListeners();
   }
 
   String get firstName => name.trim().split(' ').first;

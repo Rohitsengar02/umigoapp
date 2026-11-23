@@ -2,11 +2,10 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme.dart';
 import 'home_screen.dart';
-import 'leaderboard_screen.dart';
-import 'profile_screen.dart';
-import 'wallet_screen.dart';
+import 'inbox_screen.dart';
+import 'menu_screens.dart';
 
-/// Bottom tabs: Home, Ranks, (Go live), Wallet, Me.
+/// Bottom tabs from the sketch: Home, Following, (Go live), Reels, Chat. Side menu on Home.
 class Shell extends StatefulWidget {
   const Shell({super.key});
   @override
@@ -17,9 +16,15 @@ class _ShellState extends State<Shell> {
   int tab = 0;
   @override
   Widget build(BuildContext context) {
-    final pages = const [HomeScreen(), LeaderboardScreen(), WalletScreen(), ProfileScreen()];
+    final pages = const [
+      HomeScreen(),
+      LiveListScreen(kind: LiveListKind.following, asTab: true),
+      ReelsScreen(),
+      InboxScreen(initialTab: 'Messages', asTab: true),
+    ];
     final pad = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
+      drawer: const AppDrawer(),
       body: IndexedStack(index: tab, children: pages),
       bottomNavigationBar: Container(
         padding: EdgeInsets.only(bottom: pad > 0 ? pad : 8, top: 6),
@@ -30,7 +35,7 @@ class _ShellState extends State<Shell> {
         child: Row(
           children: [
             _item(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
-            _item(1, Icons.emoji_events_rounded, Icons.emoji_events_outlined, 'Ranks'),
+            _item(1, Icons.favorite_rounded, Icons.favorite_border_rounded, 'Following'),
             Expanded(
               child: Align(
                 heightFactor: 1,
@@ -49,8 +54,8 @@ class _ShellState extends State<Shell> {
                 ),
               ),
             ),
-            _item(2, Icons.account_balance_wallet_rounded, Icons.account_balance_wallet_outlined, 'Wallet'),
-            _item(3, Icons.person_rounded, Icons.person_outline_rounded, 'Me'),
+            _item(2, Icons.play_circle_rounded, Icons.play_circle_outline_rounded, 'Reels'),
+            _item(3, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, 'Chat'),
           ],
         ),
       ),

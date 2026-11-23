@@ -12,7 +12,16 @@ class TokenGrant {
 class LiveRoomInfo {
   final String name, title, hostName, hostId, tag;
   final int viewers;
-  LiveRoomInfo({required this.name, required this.title, required this.hostName, required this.hostId, required this.tag, required this.viewers});
+  final int startedAt; // ms since epoch, 0 if unknown
+  LiveRoomInfo({
+    required this.name,
+    required this.title,
+    required this.hostName,
+    required this.hostId,
+    required this.tag,
+    required this.viewers,
+    this.startedAt = 0,
+  });
 }
 
 /// Talks to the tiny Umigo token server (server/token-server). It signs LiveKit
@@ -55,6 +64,7 @@ class TokenApi {
         hostId: m['hostId'] ?? '',
         tag: m['tag'] ?? '',
         viewers: (m['viewers'] ?? 0) as int,
+        startedAt: (m['startedAt'] ?? 0) as int,
       );
     }).toList();
   }

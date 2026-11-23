@@ -4,13 +4,15 @@ import '../theme.dart';
 import '../widgets/common.dart';
 
 class InboxScreen extends StatefulWidget {
-  const InboxScreen({super.key});
+  final String initialTab;
+  final bool asTab;
+  const InboxScreen({super.key, this.initialTab = 'Activity', this.asTab = false});
   @override
   State<InboxScreen> createState() => _InboxScreenState();
 }
 
 class _InboxScreenState extends State<InboxScreen> {
-  String tab = 'Activity';
+  late String tab = widget.initialTab;
   bool read = false;
   bool pkAnswered = false;
 
@@ -36,7 +38,8 @@ class _InboxScreenState extends State<InboxScreen> {
         children: [
           SizedBox(height: pad.top),
           TopBar(
-            'Inbox',
+            widget.asTab ? 'Chat' : 'Notifications',
+            back: !widget.asTab,
             actions: [
               TextButton(
                 onPressed: () => setState(() => read = true),

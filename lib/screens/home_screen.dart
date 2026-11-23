@@ -1,341 +1,358 @@
-import 'dart:async';
+import 'dart:math';
 
 import 'package:material_ui/material_ui.dart';
 
-import '../data/demo_data.dart';
+import '../live/rooms_feed.dart';
 import '../live/token_api.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/live_cards.dart';
 import '../widgets/motion.dart';
-import 'live_viewer_screen.dart';
+import 'profile_screen.dart';
 
+/// Home, laid out from Rohit's sketch: menu + Umigo + coins / bell / profile,
+/// stories, Connect card, Feed / Categories / New tabs, filter chips and a
+/// 2-column grid of real lives from your server (no demo rooms).
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+const _tabs = ['Feed', 'Categories', 'New'];
+const _baseChips = ['All', 'Following', 'Music', 'Gaming', 'Talk', 'Dance'];
+const _categories = [
+  ('Music', Icons.music_note_rounded),
+  ('Gaming', Icons.sports_esports_rounded),
+  ('Talk', Icons.forum_rounded),
+  ('Dance', Icons.nightlife_rounded),
+  ('Comedy', Icons.sentiment_very_satisfied_rounded),
+  ('Fitness', Icons.fitness_center_rounded),
+  ('Cooking', Icons.restaurant_rounded),
+  ('Study', Icons.menu_book_rounded),
+];
+
 class _HomeScreenState extends State<HomeScreen> {
-  String cat = 'For you';
-  List<LiveRoomInfo> realRooms = [];
-  String? serverError;
-  Timer? _poll;
+  String tab = 'Feed';
+  String chip = 'All';
+  final feed = RoomsFeed.I;
 
   @override
   void initState() {
     super.initState();
-    _load();
-    _poll = Timer.periodic(const Duration(seconds: 6), (_) => _load());
-    AppState.I.addListener(_onState);
-  }
-
-  void _onState() {
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _load() async {
-    if (!AppState.I.serverConfigured) {
-      if (realRooms.isNotEmpty || serverError != null) {
-        setState(() {
-          realRooms = [];
-          serverError = null;
-        });
-      }
-      return;
-    }
-    try {
-      final r = await TokenApi.rooms();
-      if (!mounted) return;
-      setState(() {
-        realRooms = r.where((x) => x.hostId != AppState.I.userId).toList();
-        serverError = null;
-      });
-    } catch (e) {
-      if (mounted) setState(() => serverError = 'Live server not reachable');
-    }
+    feed.attach();
   }
 
   @override
   void dispose() {
-    _poll?.cancel();
-    AppState.I.removeListener(_onState);
+    feed.detach();
     super.dispose();
   }
 
-  String get greeting {
-    final h = DateTime.now().hour;
-    return h < 12
-        ? 'Good morning'
-        : h < 17
-        ? 'Good afternoon'
-        : 'Good evening';
-  }
+  bool _tagIs(LiveRoomInfo r, String t) => r.tag.toLowerCase().contains(t.toLowerCase()) || r.title.toLowerCase().contains(t.toLowerCase());
 
-  void openDemo(Host h) => Navigator.push(context, MaterialPageRoute(builder: (_) => LiveViewerScreen.demo(h)));
+  List<LiveRoomInfo> _visible(List<LiveRoomInfo> all) {
+    if (tab == 'New') {
+      return [...all]..sort((a, b) => b.startedAt.compareTo(a.startedAt));
+    }
+    return switch (chip) {
+      'All' => [...all]..sort((a, b) => b.viewers.compareTo(a.viewers)),
+      'Following' => all.where((r) => AppState.I.isFollowing(r.hostId)).toList(),
+      _ => all.where((r) => _tagIs(r, chip)).toList(),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
-    final st = AppState.I;
     final pad = MediaQuery.paddingOf(context);
-    final list = cat == 'For you' || cat == 'Nearby' || cat == 'New' ? demoHosts : demoHosts.where((h) => h.cat == cat).toList();
-    return RefreshIndicator(
-      color: UC.primary,
-      onRefresh: _load,
-      child: CustomScrollView(
-        slivers: staggerSlivers([
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(12, pad.top + 10, 12, 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '$greeting, ${st.firstName}',
-                          style: ts(12.5, w: FontWeight.w700, c: UC.muted),
-                        ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text('umigo', style: ds(26, ls: -1.2)),
-                            Container(
-                              width: 7,
-                              height: 7,
-                              margin: const EdgeInsets.only(left: 1),
-                              decoration: const BoxDecoration(color: UC.accent, shape: BoxShape.circle),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  CoinPill(st.coins, onTap: () => Navigator.pushNamed(context, '/coins')),
-                  const SizedBox(width: 8),
-                  Stack(
+    return ListenableBuilder(
+      listenable: Listenable.merge([feed, AppState.I]),
+      builder: (context, _) {
+        final st = AppState.I;
+        final all = feed.others;
+        final list = _visible(all);
+        return RefreshIndicator(
+          color: UC.primary,
+          onRefresh: feed.refresh,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // top bar: menu, Umigo, coins, bell, profile
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(4, pad.top + 6, 12, 4),
+                  child: Row(
                     children: [
-                      Material(
-                        color: UC.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(14),
-                          onTap: () => Navigator.pushNamed(context, '/inbox'),
-                          child: const SizedBox(width: 40, height: 40, child: Icon(Icons.notifications_none_rounded, size: 22)),
-                        ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 9,
-                        child: Container(
-                          width: 9,
-                          height: 9,
-                          decoration: BoxDecoration(
-                            color: UC.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: UC.surface, width: 2),
-                          ),
-                        ),
+                      IconButton(tooltip: 'Menu', onPressed: () => Scaffold.of(context).openDrawer(), icon: const Icon(Icons.menu_rounded, size: 26)),
+                      Text('Umigo', style: ds(26)),
+                      const Spacer(),
+                      CoinPill(st.coins, onTap: () => Navigator.pushNamed(context, '/coins')),
+                      const SizedBox(width: 6),
+                      _roundIcon(Icons.notifications_none_rounded, 'Notifications', () => Navigator.pushNamed(context, '/inbox'), dot: true),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => Navigator.push(context, umiRoute((_) => const WithBack(ProfileScreen()))),
+                        child: Avatar(name: st.name, img: 'assets/img/me.jpg', size: 38, border: UC.primary),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Container(
-                height: 44,
-                padding: const EdgeInsets.only(left: 12, right: 6),
-                decoration: BoxDecoration(color: UC.surface, borderRadius: BorderRadius.circular(15)),
-                child: Row(
-                  children: [
-                    const Icon(Icons.search_rounded, color: UC.muted, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Search hosts, IDs, tags',
-                        style: ts(14, w: FontWeight.w600, c: UC.muted),
-                      ),
-                    ),
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(11)),
-                      child: const Icon(Icons.tune_rounded, size: 17, color: UC.deep),
-                    ),
-                  ],
                 ),
               ),
-            ),
-          ),
-          // stories
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 98,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                children: [
-                  _story(
-                    label: 'Go live',
-                    onTap: () => Navigator.pushNamed(context, '/golive'),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: UC.soft,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: UC.primary, width: 2),
-                      ),
-                      child: const Icon(Icons.add_rounded, color: UC.primary, size: 26),
-                    ),
-                  ),
-                  for (final r in realRooms)
-                    _story(
-                      label: r.hostName,
-                      live: true,
-                      onTap: () => _openReal(r),
-                      child: Avatar(name: r.hostName, size: 62),
-                    ),
-                  for (final s in demoStories)
-                    _story(
-                      label: s.name,
-                      live: s.live,
-                      onTap: () => openDemo(demoHosts.firstWhere((h) => h.name == s.name, orElse: () => demoHosts.first)),
-                      child: Image.asset(s.img, fit: BoxFit.cover),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 52,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-                children: [
-                  for (final k in categories)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: GestureDetector(
-                        onTap: () => setState(() => cat = k),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 160),
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(color: k == cat ? UC.deep : UC.surface, borderRadius: BorderRadius.circular(99)),
-                          child: Text(
-                            k,
-                            style: ts(13, w: FontWeight.w800, c: k == cat ? Colors.white : UC.ink),
+              // stories: your story + everyone live now
+              SliverToBoxAdapter(
+                child: StaggerIn(
+                  index: 0,
+                  child: SizedBox(
+                    height: 100,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                      children: [
+                        _story(
+                          label: 'Your story',
+                          onTap: () => Navigator.pushNamed(context, '/golive'),
+                          child: Stack(
+                            children: [
+                              Avatar(name: st.name, img: 'assets/img/me.jpg', size: 62),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: UC.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(Icons.add_rounded, size: 15, color: Colors.white),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                        for (final r in all)
+                          _story(
+                            label: r.hostName,
+                            live: true,
+                            onTap: () => openLive(context, r),
+                            child: Container(
+                              decoration: BoxDecoration(gradient: hostGradient(r.hostId), shape: BoxShape.circle),
+                              alignment: Alignment.center,
+                              child: Text(r.hostName.isEmpty ? '?' : r.hostName.characters.first.toUpperCase(), style: ds(24, c: Colors.white)),
+                            ),
+                          ),
+                      ],
                     ),
-                ],
-              ),
-            ),
-          ),
-          if (serverError != null)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                child: Text(
-                  '$serverError · showing demo rooms',
-                  style: ts(12, w: FontWeight.w700, c: UC.accentText),
+                  ),
                 ),
               ),
-            ),
-          if (realRooms.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 2, 12, 8),
-                child: Row(
-                  children: [
-                    const LiveBadge(),
-                    const SizedBox(width: 8),
-                    Text('Live on your server', style: ts(15, w: FontWeight.w800)),
-                  ],
+              // Connect: meet new people
+              SliverToBoxAdapter(
+                child: StaggerIn(
+                  index: 1,
+                  child: Padding(padding: const EdgeInsets.fromLTRB(12, 10, 12, 4), child: _connect(all)),
                 ),
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              sliver: SliverList.separated(
-                itemCount: realRooms.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (_, i) => _realCard(realRooms[i]),
+              // Feed / Categories / New
+              SliverToBoxAdapter(
+                child: StaggerIn(
+                  index: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 12, 0),
+                    child: Row(
+                      children: [
+                        for (final t in _tabs)
+                          GestureDetector(
+                            onTap: () => setState(() => tab = t),
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 22),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AnimatedDefaultTextStyle(
+                                    duration: const Duration(milliseconds: 180),
+                                    style: t == tab ? ds(21, c: UC.ink) : ds(17, c: UC.muted, w: FontWeight.w700),
+                                    child: Text(t),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 220),
+                                    curve: Curves.easeOutCubic,
+                                    height: 3,
+                                    width: t == tab ? 26 : 0,
+                                    decoration: BoxDecoration(color: UC.primary, borderRadius: BorderRadius.circular(3)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        const Spacer(),
+                        if (feed.loading) const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: UC.primary)),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ],
-          SliverToBoxAdapter(child: _featured()),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-            sliver: SliverGrid.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 8, crossAxisSpacing: 8, mainAxisExtent: 212),
-              itemCount: list.length,
-              itemBuilder: (_, i) => _card(list[i]),
-            ),
+              if (tab == 'Feed')
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 50,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+                      children: [
+                        for (final k in _baseChips)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: GestureDetector(
+                              onTap: () => setState(() => chip = k),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 160),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: k == chip ? UC.ink : Colors.white,
+                                  borderRadius: BorderRadius.circular(99),
+                                  border: Border.all(color: k == chip ? UC.ink : UC.line, width: 1.5),
+                                ),
+                                child: Text(
+                                  k,
+                                  style: ts(13, w: FontWeight.w800, c: k == chip ? Colors.white : UC.ink),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (tab == 'Categories')
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+                  sliver: SliverGrid.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      mainAxisExtent: 84,
+                    ),
+                    itemCount: _categories.length,
+                    itemBuilder: (_, i) {
+                      final (name, icon) = _categories[i];
+                      final n = all.where((r) => _tagIs(r, name)).length;
+                      return StaggerIn(
+                        index: i,
+                        stepMs: 40,
+                        baseMs: 0,
+                        child: GestureDetector(
+                          onTap: () => setState(() {
+                            tab = 'Feed';
+                            chip = _baseChips.contains(name) ? name : 'All';
+                          }),
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(gradient: hostGradient(name), borderRadius: BorderRadius.circular(20)),
+                            child: Row(
+                              children: [
+                                Icon(icon, color: Colors.white, size: 28),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(name, style: ds(18, c: Colors.white)),
+                                      Text(
+                                        n == 0 ? 'No lives yet' : '$n live now',
+                                        style: ts(12, w: FontWeight.w700, c: Colors.white.withValues(alpha: .85)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                )
+              else if (list.isEmpty && feed.loadedOnce)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                    child: NoLives(
+                      serverConfigured: feed.serverConfigured,
+                      error: feed.error,
+                      emptyText: chip == 'Following' && tab == 'Feed'
+                          ? 'Nobody you follow is live.'
+                          : chip != 'All' && tab == 'Feed'
+                          ? 'No $chip lives right now.'
+                          : 'Nobody is live right now.',
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(padding: const EdgeInsets.fromLTRB(12, 10, 12, 20), sliver: liveGridSliver(list)),
+            ],
           ),
-        ]),
-      ),
+        );
+      },
     );
   }
 
-  void _openReal(LiveRoomInfo r) => Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => LiveViewerScreen.real(room: r.name, hostName: r.hostName, title: r.title),
-    ),
+  Widget _roundIcon(IconData icon, String tip, VoidCallback onTap, {bool dot = false}) => Stack(
+    children: [
+      Material(
+        color: UC.surface,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Tooltip(
+            message: tip,
+            child: SizedBox(width: 38, height: 38, child: Icon(icon, size: 21)),
+          ),
+        ),
+      ),
+      if (dot)
+        Positioned(
+          top: 8,
+          right: 9,
+          child: Container(
+            width: 9,
+            height: 9,
+            decoration: BoxDecoration(
+              color: UC.primary,
+              shape: BoxShape.circle,
+              border: Border.all(color: UC.surface, width: 2),
+            ),
+          ),
+        ),
+    ],
   );
 
   Widget _story({required String label, required Widget child, bool live = false, VoidCallback? onTap}) => GestureDetector(
     onTap: onTap,
     child: Container(
-      width: 62,
-      margin: const EdgeInsets.only(right: 10),
+      width: 66,
+      margin: const EdgeInsets.only(right: 12),
       child: Column(
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.bottomCenter,
-            children: [
-              Container(
-                width: 62,
-                height: 62,
-                padding: const EdgeInsets.all(2.5),
-                decoration: BoxDecoration(shape: BoxShape.circle, gradient: live ? UC.brandGradient : null, color: live ? null : UC.line),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2.5),
-                  ),
-                  child: ClipOval(child: child),
-                ),
-              ),
-              if (live)
-                Positioned(
-                  bottom: -4,
-                  child: Container(
-                    height: 16,
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    decoration: BoxDecoration(
-                      color: UC.primary,
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: Text(
-                      'LIVE',
-                      style: ts(8, w: FontWeight.w800, c: Colors.white, ls: .8),
-                    ),
-                  ),
-                ),
-            ],
+          Container(
+            width: 66,
+            height: 66,
+            padding: const EdgeInsets.all(2.5),
+            decoration: BoxDecoration(shape: BoxShape.circle, gradient: live ? UC.brandGradient : null),
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              child: ClipOval(child: child),
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           Text(
             label,
             maxLines: 1,
@@ -347,174 +364,64 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
-  Widget _featured() => GestureDetector(
-    onTap: () => openDemo(const Host('ava', 'Ava.s', 'assets/img/ava.jpg', 'Sunset PK: Ava vs Kabir', 'Goa', '18.2K', 'Music')),
+  Widget _connect(List<LiveRoomInfo> all) => GestureDetector(
+    onTap: () {
+      if (all.isEmpty) {
+        toast(context, feed.serverConfigured ? 'Nobody is live right now. Try again soon!' : 'Add your live server first.');
+        return;
+      }
+      openLive(context, all[Random().nextInt(all.length)]);
+    },
     child: Container(
-      height: 168,
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      clipBehavior: Clip.antiAlias,
+      height: 112,
+      padding: const EdgeInsets.fromLTRB(18, 14, 10, 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [BoxShadow(color: UC.inkA(.16), blurRadius: 24, offset: const Offset(0, 10))],
+        gradient: const LinearGradient(colors: [UC.soft, UC.accentSoft]),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: UC.line, width: 1.5),
       ),
-      child: Stack(
-        fit: StackFit.expand,
+      child: Row(
         children: [
-          Image.asset('assets/img/beach.jpg', fit: BoxFit.cover, alignment: const Alignment(0, -0.4)),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [UC.inkA(.82), UC.inkA(.35), UC.inkA(0)], stops: const [0, .55, 1]),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14),
+          Expanded(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    const LiveBadge(scale: 1.1),
-                    const SizedBox(width: 5),
-                    Container(
-                      height: 22,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(color: UC.accent, borderRadius: BorderRadius.circular(7)),
-                      child: Text(
-                        'PK NIGHT · 2× POINTS',
-                        style: ts(10.5, w: FontWeight.w800, c: UC.ink),
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: 200,
-                  child: Text(
-                    'Sunset PK: Ava vs Kabir',
-                    style: ts(20, w: FontWeight.w800, c: Colors.white, ls: -0.5, h: 1.2),
-                  ),
+                Text('Connect', style: ds(26, c: UC.ink)),
+                const SizedBox(height: 2),
+                Text(
+                  'Meet new people',
+                  style: ts(13.5, w: FontWeight.w700, c: UC.muted),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 52,
-                      height: 22,
-                      child: Stack(
-                        children: [
-                          for (var i = 0; i < 3; i++)
-                            Positioned(
-                              left: i * 15.0,
-                              child: Avatar(img: ['assets/img/meera.jpg', 'assets/img/rahul.jpg', 'assets/img/sana.jpg'][i], size: 22, border: Colors.white),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      '18.2K watching',
-                      style: ts(12, w: FontWeight.w700, c: Colors.white.withValues(alpha: .9)),
-                    ),
-                    const Spacer(),
-                    Container(
-                      height: 32,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(11)),
-                      child: Text(
-                        'Join',
-                        style: ts(13, w: FontWeight.w800, c: UC.primary),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-
-  Widget _card(Host h) => GestureDetector(
-    onTap: () => openDemo(h),
-    child: Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: UC.surface,
-        boxShadow: [BoxShadow(color: UC.inkA(.12), blurRadius: 18, offset: const Offset(0, 6))],
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Hero(
-            tag: 'live_${h.id}',
-            child: Image.asset(h.img, fit: BoxFit.cover, alignment: Alignment(0, h.posY)),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [UC.inkA(.3), UC.inkA(0), UC.inkA(0), UC.inkA(.82)],
-                stops: const [0, .28, .52, 1],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 8,
-            top: 8,
-            child: Row(
-              children: [
-                const LiveBadge(),
-                const SizedBox(width: 4),
                 Container(
-                  height: 20,
-                  padding: const EdgeInsets.symmetric(horizontal: 7),
-                  decoration: BoxDecoration(color: UC.inkA(.5), borderRadius: BorderRadius.circular(6)),
+                  height: 28,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(color: UC.primary, borderRadius: BorderRadius.circular(99)),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.visibility_outlined, size: 11, color: Colors.white),
-                      const SizedBox(width: 3),
                       Text(
-                        h.views,
-                        style: ts(10.5, w: FontWeight.w800, c: Colors.white),
+                        'Start',
+                        style: ts(12.5, w: FontWeight.w800, c: Colors.white),
                       ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward_rounded, size: 15, color: Colors.white),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          Positioned(
-            left: 10,
-            right: 10,
-            bottom: 10,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          SizedBox(
+            width: 120,
+            height: 90,
+            child: Stack(
               children: [
-                Text(
-                  h.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: ts(13.5, w: FontWeight.w800, c: Colors.white),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Avatar(img: h.img, size: 18, border: Colors.white, borderW: 1.5),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        '${h.name} · ${h.where}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ts(11.5, w: FontWeight.w700, c: Colors.white.withValues(alpha: .92)),
-                      ),
-                    ),
-                  ],
-                ),
+                Positioned(left: 4, top: 0, child: _bubble('assets/img/priya.jpg', 50)),
+                Positioned(right: 2, top: 4, child: _bubble('assets/img/rahul.jpg', 44)),
+                Positioned(left: 30, bottom: 0, child: _bubble('assets/img/zara.jpg', 46)),
+                Positioned(right: 18, bottom: 6, child: _bubble('assets/img/kabir.jpg', 34)),
               ],
             ),
           ),
@@ -523,50 +430,5 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
-  Widget _realCard(LiveRoomInfo r) => GestureDetector(
-    onTap: () => _openReal(r),
-    child: Container(
-      height: 76,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [UC.deep, UC.primary]),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Avatar(name: r.hostName, size: 48, border: Colors.white),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  r.title.isEmpty ? '${r.hostName} is live' : r.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: ts(15, w: FontWeight.w800, c: Colors.white),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${r.hostName}${r.tag.isEmpty ? '' : ' · #${r.tag}'} · ${r.viewers} watching',
-                  style: ts(12, w: FontWeight.w700, c: Colors.white.withValues(alpha: .85)),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            height: 34,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(11)),
-            child: Text(
-              'Watch',
-              style: ts(13, w: FontWeight.w800, c: UC.primary),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+  Widget _bubble(String img, double s) => Avatar(img: img, size: s, border: Colors.white, borderW: 2.5);
 }

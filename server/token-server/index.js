@@ -130,6 +130,7 @@ async function listRooms() {
       hostName: meta.hostName || 'Host',
       hostId: meta.hostId,
       viewers,
+      startedAt: Number(r.creationTime || 0) * 1000, // ms, newest first in the app's "New" tab
     });
   }
   return out;

@@ -314,17 +314,21 @@ class TopBar extends StatelessWidget {
   final String title;
   final List<Widget> actions;
   final Color fg;
-  const TopBar(this.title, {super.key, this.actions = const [], this.fg = UC.ink});
+  final bool back;
+  const TopBar(this.title, {super.key, this.actions = const [], this.fg = UC.ink, this.back = true});
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(6, 8, 12, 8),
     child: Row(
       children: [
-        IconButton(
-          tooltip: 'Back',
-          onPressed: () => Navigator.maybePop(context),
-          icon: Icon(Icons.arrow_back_rounded, color: fg),
-        ),
+        if (back)
+          IconButton(
+            tooltip: 'Back',
+            onPressed: () => Navigator.maybePop(context),
+            icon: Icon(Icons.arrow_back_rounded, color: fg),
+          )
+        else
+          const SizedBox(width: 12),
         Expanded(
           child: Text(
             title,
@@ -341,4 +345,28 @@ void toast(BuildContext context, String msg) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 2)));
+}
+
+/// Pushes a tab page (which has no back button of its own) as a full screen with one.
+class WithBack extends StatelessWidget {
+  final Widget child;
+  const WithBack(this.child, {super.key});
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top;
+    return Scaffold(
+      body: Column(
+        children: [
+          SizedBox(height: top),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(tooltip: 'Back', onPressed: () => Navigator.maybePop(context), icon: const Icon(Icons.arrow_back_rounded)),
+          ),
+          Expanded(
+            child: MediaQuery.removePadding(context: context, removeTop: true, child: child),
+          ),
+        ],
+      ),
+    );
+  }
 }

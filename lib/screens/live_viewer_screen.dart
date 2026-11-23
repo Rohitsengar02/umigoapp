@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../data/demo_data.dart';
 import '../live/live_session.dart';
+import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/live_widgets.dart';
@@ -27,13 +28,15 @@ class LiveViewerScreen extends StatefulWidget {
 class _LiveViewerScreenState extends State<LiveViewerScreen> {
   late final LiveSession s = widget.create();
   final draft = TextEditingController();
-  bool following = false;
 
   @override
   void initState() {
     super.initState();
     s.start();
+    if (!s.demo) AppState.I.addWatched(s.hostIdentity, s.hostName, s.title);
   }
+
+  bool get following => AppState.I.isFollowing(s.hostIdentity);
 
   @override
   void dispose() {
@@ -98,7 +101,7 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                         ),
                         const SizedBox(width: 8),
                         GestureDetector(
-                          onTap: () => setState(() => following = !following),
+                          onTap: () => setState(() => AppState.I.toggleFollow(s.hostIdentity, s.hostName)),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 160),
                             height: 32,
