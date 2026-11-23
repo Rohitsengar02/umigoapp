@@ -4,9 +4,11 @@ import 'dart:math';
 import 'package:material_ui/material_ui.dart';
 
 import '../data/demo_data.dart';
+import '../live/fx.dart';
 import '../live/live_session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/fx_sheet.dart';
 import '../widgets/live_widgets.dart';
 import '../widgets/mod_widgets.dart';
 
@@ -101,14 +103,14 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
       child: Scaffold(
         backgroundColor: UC.ink,
         body: ListenableBuilder(
-          listenable: s,
+          listenable: Listenable.merge([s, LiveFx.I]),
           builder: (context, _) {
             final mine = 18640 + s.diamondsEarned * 2;
             final pct = mine / (mine + theirs);
             return Stack(
               children: [
                 Positioned.fill(
-                  child: LiveVideo(track: s.localVideo, fallbackImg: 'assets/img/ava.jpg', mirror: s.camFront),
+                  child: LiveFx.I.preview(LiveVideo(track: s.localVideo, fallbackImg: 'assets/img/ava.jpg', mirror: s.camFront)),
                 ),
                 const Positioned.fill(child: ShadeOverlay()),
                 if (s.videoBlocked) const Positioned.fill(child: VideoBlockedOverlay(host: true)),
@@ -140,7 +142,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      GuardPill(on: s.guardOn, onTap: () => showModPanel(context, s)),
+                      GuardPill(on: s.guardActive || s.demo, onTap: () => showModPanel(context, s)),
                       const Spacer(),
                       GestureDetector(
                         onTap: _end,
@@ -259,6 +261,8 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                       RoundGlassButton(s.micOn ? Icons.mic_rounded : Icons.mic_off_rounded, tooltip: 'Mic', onTap: s.toggleMic),
                       const SizedBox(width: 6),
                       RoundGlassButton(Icons.flip_camera_ios_rounded, tooltip: 'Flip camera', onTap: s.flipCamera),
+                      const SizedBox(width: 6),
+                      RoundGlassButton(Icons.auto_awesome_rounded, tooltip: 'Filters', color: UC.primary, onTap: () => showFxSheet(context)),
                       const SizedBox(width: 6),
                       RoundGlassButton(Icons.shield_rounded, tooltip: 'Moderation', color: UC.gold, onTap: () => showModPanel(context, s)),
                       const SizedBox(width: 6),

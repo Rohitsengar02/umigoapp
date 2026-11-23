@@ -29,6 +29,13 @@ android {
         versionName = flutter.versionName
     }
 
+    packaging {
+        jniLibs {
+            pickFirsts += "lib/*/libmars-face-kit.so"
+            pickFirsts += "lib/*/libc++_shared.so"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -46,4 +53,11 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // live camera filters (beauty, looks, AR stickers)
+    implementation(project(":gpupixel"))
+    // same WebRTC build flutter_webrtc uses, so the filter can read and make video frames
+    implementation("io.github.webrtc-sdk:android:150.7871.04")
 }

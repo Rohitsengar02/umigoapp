@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/live_widgets.dart';
 import '../widgets/mod_widgets.dart';
+import '../widgets/skeleton.dart';
 import 'gift_sheet.dart';
 
 /// Watching someone live: video, chat, likes, gifts.
@@ -68,7 +69,7 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                 child: LiveVideo(track: s.remoteVideo, fallbackImg: h?.img, heroTag: h == null ? null : 'live_${h.id}'),
               ),
             ),
-            if (s.videoBlocked) const Positioned.fill(child: VideoBlockedOverlay()),
+            if (s.videoHidden) const Positioned.fill(child: VideoBlockedOverlay()),
             const Positioned.fill(child: ShadeOverlay()),
             // header
             Positioned(
@@ -174,7 +175,7 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  GuardPill(on: s.guardOn),
+                  GuardPill(on: s.guardActive || s.demo),
                   if (!s.demo) ...[
                     const SizedBox(width: 6),
                     GlassPill(
@@ -188,7 +189,7 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
               ),
             ),
             if (s.connecting)
-              const Center(child: CircularProgressIndicator(color: Colors.white))
+              const Positioned.fill(child: LiveConnectingSkeleton())
             else if (!s.demo && s.remoteVideo == null)
               Center(
                 child: Padding(

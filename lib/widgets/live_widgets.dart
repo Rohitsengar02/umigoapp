@@ -7,6 +7,7 @@ import 'package:livekit_client/livekit_client.dart';
 import '../data/demo_data.dart';
 import '../live/live_session.dart';
 import '../theme.dart';
+import 'skeleton.dart';
 import 'common.dart';
 import 'gift_icons.dart';
 
@@ -27,7 +28,7 @@ class LiveVideo extends StatelessWidget {
       );
     }
     if (fallbackImg != null) {
-      final img = Image.asset(fallbackImg!, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+      final img = fadeInAsset(fallbackImg!, w: double.infinity, h: double.infinity);
       return heroTag == null ? img : Hero(tag: heroTag!, child: img);
     }
     return Container(

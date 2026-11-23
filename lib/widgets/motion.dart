@@ -3,12 +3,18 @@ import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 
-/// App-wide screen transition: the new screen glides in from the right with a
-/// soft fade and scale while the old one drifts left and dims.
+/// App-wide screen transition, tuned for speed: the new screen slides in a short
+/// distance with a quick fade and a hint of scale, while the old one drifts left.
+/// Built from transition widgets (no rebuilds, no saveLayer tints) so it stays at 60/120 fps.
+const kPageIn = Duration(milliseconds: 300);
+const kPageOut = Duration(milliseconds: 240);
+
 class UmiPageTransitions extends PageTransitionsBuilder {
   const UmiPageTransitions();
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 460);
+  Duration get transitionDuration => kPageIn;
+  @override
+  Duration get reverseTransitionDuration => kPageOut;
   @override
   Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) =>
       UmiTransition(animation: animation, secondary: secondaryAnimation, child: child);
@@ -18,37 +24,33 @@ class UmiTransition extends StatelessWidget {
   final Animation<double> animation, secondary;
   final Widget child;
   const UmiTransition({super.key, required this.animation, required this.secondary, required this.child});
+
+  static final _inSlide = Tween(begin: const Offset(.08, 0), end: Offset.zero);
+  static final _outSlide = Tween(begin: Offset.zero, end: const Offset(-.06, 0));
+  static final _inScale = Tween(begin: .985, end: 1.0);
+
   @override
   Widget build(BuildContext context) {
-    final inC = CurvedAnimation(parent: animation, curve: Curves.easeOutQuart, reverseCurve: Curves.easeInCubic);
-    final outC = CurvedAnimation(parent: secondary, curve: Curves.easeOutCubic);
-    return AnimatedBuilder(
-      animation: Listenable.merge([inC, outC]),
-      child: child,
-      builder: (context, child) {
-        final t = inC.value, o = outC.value;
-        return Opacity(
-          opacity: (t * 1.4).clamp(0, 1).toDouble(),
-          child: Transform.translate(
-            offset: Offset((1 - t) * 60 - o * 40, 0),
-            child: Transform.scale(
-              scale: (0.97 + 0.03 * t) - 0.02 * o,
-              child: ColorFiltered(
-                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: o * .12), BlendMode.srcATop),
-                child: child,
-              ),
-            ),
-          ),
-        );
-      },
+    final inC = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+    final fade = CurvedAnimation(parent: animation, curve: const Interval(0, .6, curve: Curves.easeOut), reverseCurve: Curves.easeIn);
+    final outC = CurvedAnimation(parent: secondary, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+    return SlideTransition(
+      position: _outSlide.animate(outC),
+      child: FadeTransition(
+        opacity: fade,
+        child: SlideTransition(
+          position: _inSlide.animate(inC),
+          child: ScaleTransition(scale: _inScale.animate(inC), child: child),
+        ),
+      ),
     );
   }
 }
 
 /// Route with the Umigo transition, for screens pushed with a builder.
 Route<T> umiRoute<T>(WidgetBuilder b) => PageRouteBuilder<T>(
-  transitionDuration: const Duration(milliseconds: 460),
-  reverseTransitionDuration: const Duration(milliseconds: 320),
+  transitionDuration: kPageIn,
+  reverseTransitionDuration: kPageOut,
   pageBuilder: (c, _, _) => b(c),
   transitionsBuilder: (c, a, s, child) => UmiTransition(animation: a, secondary: s, child: child),
 );
