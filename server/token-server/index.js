@@ -2,7 +2,7 @@
 // LiveKit server. It signs access tokens with YOUR key/secret (no LiveKit Cloud)
 // and lists rooms that are live right now for the Home feed.
 //
-//   POST /token  {room, identity, name, role: "host"|"viewer", title?, tag?}
+//   POST /token  {room, identity, name, role: "host"|"viewer", title?, tag?, access?, fee?}
 //                -> {url, token}
 //   GET  /rooms  -> {rooms: [{name, title, hostName, hostId, tag, viewers}]}
 //   GET  /health -> ok
@@ -76,7 +76,9 @@ async function issueToken(body) {
 
   if (host) {
     // Create (or update) the room with metadata the Home feed shows.
-    const metadata = JSON.stringify({ title: clean(body.title, 60), tag: clean(body.tag, 20), hostName: name, hostId: identity });
+    const access = ['public', 'paid', 'subscribers'].includes(body.access) ? body.access : 'public';
+    const fee = Math.max(0, Math.min(100000, parseInt(body.fee, 10) || 0));
+    const metadata = JSON.stringify({ title: clean(body.title, 60), tag: clean(body.tag, 20), hostName: name, hostId: identity, access, fee });
     try {
       await rooms.createRoom({ name: room, emptyTimeout: 60, maxParticipants: 5000, metadata });
     } catch {
@@ -129,6 +131,8 @@ async function listRooms() {
       tag: meta.tag || '',
       hostName: meta.hostName || 'Host',
       hostId: meta.hostId,
+      access: meta.access || 'public', // shown as a lock on Home; the app checks payment (server ledger comes with the backend)
+      fee: meta.fee || 0,
       viewers,
       startedAt: Number(r.creationTime || 0) * 1000, // ms, newest first in the app's "New" tab
     });

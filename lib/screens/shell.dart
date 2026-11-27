@@ -4,8 +4,9 @@ import 'package:material_ui/material_ui.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'home_screen.dart';
-import 'inbox_screen.dart';
 import 'menu_screens.dart';
+import 'messages_screen.dart';
+import 'reels_screen.dart';
 
 /// Four tabs in a floating glass bar, with Go live as its own round button beside it.
 class Shell extends StatefulWidget {
@@ -36,12 +37,7 @@ class _ShellState extends State<Shell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      const HomeScreen(),
-      const LiveListScreen(kind: LiveListKind.following, asTab: true),
-      const ReelsScreen(),
-      const InboxScreen(initialTab: 'Messages', asTab: true),
-    ];
+    final pages = [const HomeScreen(), const LiveListScreen(kind: LiveListKind.following, asTab: true), const ReelsScreen(), const MessagesScreen()];
     final pad = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
       drawer: const AppDrawer(),

@@ -39,6 +39,23 @@ class AppState extends ChangeNotifier {
   /// Lives this user watched, newest first: "hostId|hostName|title|epochMs".
   final List<String> watched = [];
 
+  /// Paid things this user opened: `chat:creatorId`, `live:hostId`. Client-side
+  /// until the backend keeps the ledger.
+  final Set<String> unlocked = {};
+
+  /// Creators this user subscribes to.
+  final Set<String> subscribed = {};
+  final Set<String> likedReels = {};
+  final Set<String> savedReels = {};
+
+  /// My own profile settings.
+  bool privateAccount = false;
+  String bio = 'Singing, chatting and PK battles · Jaipur';
+  String liveDays = 'Mon–Fri';
+  String liveTime = '9:00 PM';
+  int myChatPrice = 29;
+  int mySubPrice = 199;
+
   Future<void> load() async {
     try {
       _p = await SharedPreferences.getInstance();
@@ -60,6 +77,16 @@ class AppState extends ChangeNotifier {
       if (i > 0) following[f.substring(0, i)] = f.substring(i + 1);
     }
     watched.addAll(p.getStringList('watched') ?? const <String>[]);
+    unlocked.addAll(p.getStringList('unlocked') ?? const <String>[]);
+    subscribed.addAll(p.getStringList('subscribed') ?? const <String>[]);
+    likedReels.addAll(p.getStringList('likedReels') ?? const <String>[]);
+    savedReels.addAll(p.getStringList('savedReels') ?? const <String>[]);
+    privateAccount = p.getBool('privateAccount') ?? false;
+    bio = p.getString('bio') ?? bio;
+    liveDays = p.getString('liveDays') ?? liveDays;
+    liveTime = p.getString('liveTime') ?? liveTime;
+    myChatPrice = p.getInt('myChatPrice') ?? myChatPrice;
+    mySubPrice = p.getInt('mySubPrice') ?? mySubPrice;
   }
 
   void _save() {
@@ -74,6 +101,62 @@ class AppState extends ChangeNotifier {
     p.setStringList('interests', interests);
     p.setStringList('following', [for (final e in following.entries) '${e.key}|${e.value}']);
     p.setStringList('watched', watched);
+    p.setStringList('unlocked', unlocked.toList());
+    p.setStringList('subscribed', subscribed.toList());
+    p.setStringList('likedReels', likedReels.toList());
+    p.setStringList('savedReels', savedReels.toList());
+    p.setBool('privateAccount', privateAccount);
+    p.setString('bio', bio);
+    p.setString('liveDays', liveDays);
+    p.setString('liveTime', liveTime);
+    p.setInt('myChatPrice', myChatPrice);
+    p.setInt('mySubPrice', mySubPrice);
+  }
+
+  bool isUnlocked(String key) => unlocked.contains(key);
+
+  /// Pays [price] coins once to open [key]. Returns false when the wallet is short.
+  bool unlock(String key, int price) {
+    if (unlocked.contains(key)) return true;
+    if (price > 0 && !spend(price)) return false;
+    unlocked.add(key);
+    _save();
+    notifyListeners();
+    return true;
+  }
+
+  bool isSubscribed(String id) => subscribed.contains(id);
+
+  bool subscribe(String id, int price) {
+    if (subscribed.contains(id)) return true;
+    if (!spend(price)) return false;
+    subscribed.add(id);
+    _save();
+    notifyListeners();
+    return true;
+  }
+
+  void unsubscribe(String id) {
+    subscribed.remove(id);
+    _save();
+    notifyListeners();
+  }
+
+  void toggleIn(Set<String> set, String id) {
+    set.contains(id) ? set.remove(id) : set.add(id);
+    _save();
+    notifyListeners();
+  }
+
+  void updateProfile({bool? privateAccount, String? bio, String? liveDays, String? liveTime, int? chatPrice, int? subPrice}) {
+    if (privateAccount != null) this.privateAccount = privateAccount;
+    if (bio != null) this.bio = bio;
+    if (liveDays != null) this.liveDays = liveDays;
+    if (liveTime != null) this.liveTime = liveTime;
+    if (chatPrice != null) myChatPrice = chatPrice;
+    if (subPrice != null) mySubPrice = subPrice;
+    _save();
+    notifyListeners();
   }
 
   bool isFollowing(String hostId) => following.containsKey(hostId);

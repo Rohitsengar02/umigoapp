@@ -117,7 +117,7 @@ class ChatFeed extends StatelessWidget {
         ),
       ]);
     }
-    final gift = e.type == LiveEventType.gift;
+    final gift = e.type == LiveEventType.gift || e.type == LiveEventType.tip;
     final lvBg = e.lv > 30
         ? UC.accentText
         : e.lv > 10
@@ -130,6 +130,7 @@ class ChatFeed extends StatelessWidget {
         : const Color(0xFFFFC4E3);
     final text = switch (e.type) {
       LiveEventType.gift => 'sent ${giftById(e.giftId).name}${e.qty > 1 ? ' ×${e.qty}' : ''}',
+      LiveEventType.tip => 'tipped ${e.qty} for “${e.text}”',
       _ => e.text,
     };
     return _bubble(Colors.transparent, gift ? const Color(0x6BFF9F80) : UC.inkA(.42), [
@@ -153,10 +154,15 @@ class ChatFeed extends StatelessWidget {
         text: text,
         style: ts(12.5, w: FontWeight.w600, c: e.masked ? Colors.white.withValues(alpha: .8) : Colors.white, h: 1.35),
       ),
-      if (gift)
+      if (e.type == LiveEventType.gift)
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
           child: Padding(padding: const EdgeInsets.only(left: 4), child: GiftIcon(e.giftId, size: 16)),
+        ),
+      if (e.type == LiveEventType.tip)
+        const WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(padding: EdgeInsets.only(left: 4), child: CoinDot(size: 14)),
         ),
     ]);
   }

@@ -6,10 +6,10 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/live_cards.dart';
-import '../widgets/mascot.dart';
 import '../widgets/motion.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/ui.dart';
+import 'categories_screen.dart';
 import 'leaderboard_screen.dart';
 import 'wallet_screen.dart';
 
@@ -33,6 +33,7 @@ class AppDrawer extends StatelessWidget {
       ),
       (Icons.favorite_rounded, 'My favourite', () => go(const LiveListScreen(kind: LiveListKind.favourite))),
       (Icons.local_fire_department_rounded, 'Trending', () => go(const LiveListScreen(kind: LiveListKind.trending))),
+      (Icons.grid_view_rounded, 'Categories', () => go(const CategoriesScreen())),
       (Icons.history_rounded, 'Watch history', () => go(const WatchHistoryScreen())),
       (Icons.auto_awesome_rounded, 'Recommended', () => go(const LiveListScreen(kind: LiveListKind.recommended))),
       (Icons.lock_rounded, 'Best for private', () => go(const LiveListScreen(kind: LiveListKind.private))),
@@ -341,38 +342,6 @@ class _LiveNowButton extends StatelessWidget {
   }
 }
 
-/// Reels tab placeholder.
-class ReelsScreen extends StatelessWidget {
-  const ReelsScreen({super.key});
-  @override
-  Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      gradient: RadialGradient(center: Alignment(.6, -.7), radius: 1.3, colors: [Color(0xFF6B3A63), UC.ink]),
-    ),
-    alignment: Alignment.center,
-    padding: const EdgeInsets.all(32),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Mascot(mood: 'love', size: 140),
-        const SizedBox(height: 14),
-        TextReveal(
-          'Reels are coming',
-          style: ds(30, c: Colors.white),
-          align: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Short clips from the best lives, swipe up to watch. We are building it next.',
-          textAlign: TextAlign.center,
-          style: ts(14, w: FontWeight.w600, c: Colors.white.withValues(alpha: .8), h: 1.45),
-        ),
-      ],
-    ),
-  );
-}
-
-/// Simple screen for menu items that are not built yet.
 class InfoScreen extends StatelessWidget {
   final String title, text;
   final IconData icon;

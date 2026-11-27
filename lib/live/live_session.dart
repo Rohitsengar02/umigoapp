@@ -6,13 +6,16 @@ import 'package:flutter/foundation.dart';
 import 'package:livekit_client/livekit_client.dart';
 
 import '../data/demo_data.dart';
+import '../data/social_data.dart' show creatorById, LiveAccess;
 import '../moderation/chat_filter.dart';
 import '../moderation/nsfw_classifier.dart';
 import '../state/app_state.dart';
 import 'fx.dart';
+import 'live_setup.dart';
+export 'live_setup.dart';
 import 'token_api.dart';
 
-enum LiveEventType { chat, gift, join, like, system, mod }
+enum LiveEventType { chat, gift, join, like, system, mod, tip }
 
 class LiveEvent {
   final LiveEventType type;
@@ -58,7 +61,11 @@ class LiveEvent {
     );
   }
 
-  int get coins => type == LiveEventType.gift ? giftById(giftId).price * qty : 0;
+  int get coins => switch (type) {
+    LiveEventType.gift => giftById(giftId).price * qty,
+    LiveEventType.tip => qty, // a tip carries its coin amount in qty
+    _ => 0,
+  };
 }
 
 /// A moderation notice shown as a toast to this user.
@@ -78,13 +85,24 @@ const guardIdentity = 'umi-guard';
 /// Demo mode (no server set): local camera for hosts, simulated viewers and a
 /// simulated guard so moderation can be tried.
 class LiveSession extends ChangeNotifier {
-  LiveSession.host({required this.title, required this.tag})
+  LiveSession.host({required this.title, required this.tag, LiveSetup? setup})
     : isHost = true,
+      setup = setup ?? LiveSetup(title: title, tag: tag),
       roomName = 'live_${AppState.I.userId}',
       hostName = AppState.I.firstName,
       demoHost = null;
 
-  LiveSession.viewer({required this.roomName, required this.hostName, this.demoHost, this.title = ''}) : isHost = false, tag = '';
+  LiveSession.viewer({required this.roomName, required this.hostName, this.demoHost, this.title = '', LiveSetup? setup})
+    : isHost = false,
+      tag = '',
+      setup = setup ?? (demoHost != null ? LiveSetup.forCreator(creatorById(demoHost.id)) : LiveSetup(tipsOn: false, goalOn: false));
+
+  /// The host's choices: access, tip menu, gift goal. Viewers get it from the host.
+  LiveSetup setup;
+
+  /// Coins from gifts and tips during this session (for the gift goal).
+  int goalCollected = 0;
+  int get goalProgress => setup.goalStart + goalCollected;
 
   final bool isHost;
   final String roomName;
@@ -192,7 +210,16 @@ class LiveSession extends ChangeNotifier {
   Future<void> _startReal() async {
     final me = AppState.I;
     myIdentity = isHost ? me.userId : '${me.userId}~${_rnd.nextInt(99999)}';
-    final grant = await TokenApi.token(room: roomName, identity: myIdentity, name: me.firstName, host: isHost, title: title, tag: tag);
+    final grant = await TokenApi.token(
+      room: roomName,
+      identity: myIdentity,
+      name: me.firstName,
+      host: isHost,
+      title: title,
+      tag: tag,
+      access: setup.access.name,
+      fee: setup.access == LiveAccess.paid ? setup.entryFee : 0,
+    );
     final r = Room(roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true));
     room = r;
     final l = r.createListener();
@@ -200,6 +227,7 @@ class LiveSession extends ChangeNotifier {
     l
       ..on<ParticipantConnectedEvent>((e) {
         if (e.participant.identity == guardIdentity) _setGuard(true);
+        if (isHost) _sendSetup(e.participant.identity);
         if (isHost && inAppGuard) _greet(e.participant.identity, e.participant.name);
         _recount();
       })
@@ -280,6 +308,14 @@ class LiveSession extends ChangeNotifier {
     }
     final sender = e.participant?.identity ?? e.participantIdentity;
     final senderName = e.participant?.name ?? '${j['n'] ?? 'A viewer'}';
+    if (j['t'] == 'setup') {
+      // only the host can describe the live
+      if (!isHost && sender == hostIdentity && hostIdentity.isNotEmpty) {
+        setup = LiveSetup.fromJson(j);
+        notifyListeners();
+      }
+      return;
+    }
     if (j['t'] == 'mod') {
       // moderation comes from the server bot or from the host's phone
       if (sender == guardIdentity || (sender == hostIdentity && hostIdentity.isNotEmpty)) _onMod(j);
@@ -328,6 +364,13 @@ class LiveSession extends ChangeNotifier {
 
   void _sendTo(Map<String, dynamic> m, List<String> to) {
     room?.localParticipant?.publishData(utf8.encode(jsonEncode(m)), reliable: true, topic: 'umigo', destinationIdentities: to).catchError((_) {});
+  }
+
+  /// A newcomer gets the live's access rules, tip menu and goal.
+  void _sendSetup(String id) {
+    final m = setup.toJson();
+    if (m['goal'] != null) m['goal'] = {...m['goal'] as Map<String, dynamic>, 's': goalProgress};
+    _sendTo(m, [id]);
   }
 
   /// A newcomer gets the live's current rules, or is sent away if banned.
@@ -524,7 +567,12 @@ class LiveSession extends ChangeNotifier {
     } else if (roll < 0.75) {
       final cheap = ['rose', 'heart', 'coffee', 'star', 'crown', 'rocket'];
       final g = cheap[min(_rnd.nextInt(cheap.length), _rnd.nextInt(cheap.length))];
-      _push(LiveEvent(LiveEventType.gift, b.$1, lv: b.$2, giftId: g, qty: [1, 1, 3, 10][_rnd.nextInt(4)], senderId: sid));
+      if (setup.tipsOn && setup.tips.isNotEmpty && _rnd.nextDouble() < .3) {
+        final t = setup.tips[min(_rnd.nextInt(setup.tips.length), _rnd.nextInt(setup.tips.length))];
+        _push(LiveEvent(LiveEventType.tip, b.$1, lv: b.$2, text: t.label, qty: t.coins, senderId: sid));
+      } else {
+        _push(LiveEvent(LiveEventType.gift, b.$1, lv: b.$2, giftId: g, qty: [1, 1, 3, 10][_rnd.nextInt(4)], senderId: sid));
+      }
     } else if (roll < 0.9) {
       _push(LiveEvent(LiveEventType.join, b.$1, lv: b.$2, text: 'joined the room', senderId: sid));
     } else {
@@ -537,13 +585,14 @@ class LiveSession extends ChangeNotifier {
   void _push(LiveEvent e) {
     events.add(e);
     if (events.length > 80) events.removeAt(1);
-    if (e.type == LiveEventType.gift) {
+    if (e.type == LiveEventType.gift || e.type == LiveEventType.tip) {
       _gifters.add(e.name);
       giftersCount = _gifters.length;
       final d = e.coins ~/ 2; // host gets 50% of coin value as diamonds
       diamondsEarned += d;
+      goalCollected += e.coins;
       if (isHost) AppState.I.addDiamonds(d);
-      _giftCtl.add(e);
+      if (e.type == LiveEventType.gift) _giftCtl.add(e);
     }
     if (e.type == LiveEventType.like) {
       likes++;
@@ -612,6 +661,15 @@ class LiveSession extends ChangeNotifier {
   bool sendGift(Gift g, int qty) {
     if (!AppState.I.spend(g.price * qty)) return false;
     final e = LiveEvent(LiveEventType.gift, AppState.I.firstName, lv: AppState.I.level, giftId: g.id, qty: qty, mine: true, senderId: myIdentity);
+    _push(e);
+    _send(e);
+    return true;
+  }
+
+  /// Pays a line of the host's tip menu. Returns false when the wallet is short.
+  bool sendTip(TipItem t) {
+    if (!AppState.I.spend(t.coins)) return false;
+    final e = LiveEvent(LiveEventType.tip, AppState.I.firstName, lv: AppState.I.level, text: t.label, qty: t.coins, mine: true, senderId: myIdentity);
     _push(e);
     _send(e);
     return true;

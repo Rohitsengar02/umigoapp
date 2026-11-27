@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 
 import 'screens/buy_coins_screen.dart';
 import 'screens/go_live_screen.dart';
-import 'screens/inbox_screen.dart';
+import 'screens/activity_screen.dart';
+import 'screens/categories_screen.dart';
+import 'screens/messages_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/register_screen.dart';
@@ -47,7 +49,9 @@ class UmigoApp extends StatelessWidget {
         '/coins': (_) => const BuyCoinsScreen(),
         '/transactions': (_) => const TransactionsScreen(),
         '/withdraw': (_) => const WithdrawScreen(),
-        '/inbox': (_) => const InboxScreen(),
+        '/inbox': (_) => const ActivityScreen(),
+        '/messages': (_) => const MessagesScreen(asTab: false),
+        '/categories': (_) => const CategoriesScreen(),
         '/server': (_) => const ServerSettingsScreen(),
       },
     );

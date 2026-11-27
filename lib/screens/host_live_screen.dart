@@ -9,7 +9,9 @@ import '../live/live_session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/fx_sheet.dart';
+import '../widgets/live_extras.dart';
 import '../widgets/live_widgets.dart';
+import '../data/social_data.dart' show LiveAccess;
 import '../widgets/ui.dart';
 import '../widgets/mod_widgets.dart';
 
@@ -17,13 +19,14 @@ import '../widgets/mod_widgets.dart';
 class HostLiveScreen extends StatefulWidget {
   final String title, tag;
   final bool pk;
-  const HostLiveScreen({super.key, required this.title, required this.tag, this.pk = false});
+  final LiveSetup? setup;
+  const HostLiveScreen({super.key, required this.title, required this.tag, this.pk = false, this.setup});
   @override
   State<HostLiveScreen> createState() => _HostLiveScreenState();
 }
 
 class _HostLiveScreenState extends State<HostLiveScreen> {
-  late final LiveSession s = LiveSession.host(title: widget.title, tag: widget.tag);
+  late final LiveSession s = LiveSession.host(title: widget.title, tag: widget.tag, setup: widget.setup);
   Timer? _tick;
   final draft = TextEditingController();
   int theirs = 12920;
@@ -173,9 +176,31 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.title.isEmpty ? 'My live' : widget.title,
-                        style: ts(15, w: FontWeight.w800, c: Colors.white),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              widget.title.isEmpty ? 'My live' : widget.title,
+                              overflow: TextOverflow.ellipsis,
+                              style: ts(15, w: FontWeight.w800, c: Colors.white),
+                            ),
+                          ),
+                          if (s.setup.isPrivate) ...[
+                            const SizedBox(width: 6),
+                            GlassPill(
+                              child: Row(
+                                children: [
+                                  Icon(s.setup.access == LiveAccess.paid ? Icons.lock_rounded : Icons.workspace_premium_rounded, size: 13, color: UC.gold),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    s.setup.access == LiveAccess.paid ? 'Private · ${s.setup.entryFee} coins' : 'Subscribers · ${s.setup.subPrice}/mo',
+                                    style: ts(11.5, w: FontWeight.w800, c: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -190,6 +215,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                         style: ts(11.5, w: FontWeight.w700, c: s.error != null ? UC.gold : Colors.white.withValues(alpha: .8)),
                       ),
                       if (widget.pk) ...[const SizedBox(height: 10), _pkBar(mine, pct)],
+                      if (s.setup.goalOn) ...[const SizedBox(height: 10), GoalBar(s)],
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -206,7 +232,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: pad.top + (widget.pk ? 270 : 220),
+                  top: pad.top + (widget.pk ? 270 : 220) + (s.setup.goalOn ? 66 : 0),
                   child: GiftOverlay(gifts: s.gifts),
                 ),
                 Positioned(

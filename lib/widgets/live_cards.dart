@@ -5,12 +5,13 @@ import '../live/token_api.dart';
 import '../screens/live_viewer_screen.dart';
 import '../theme.dart';
 import 'common.dart';
+import 'pay_sheet.dart';
 import 'motion.dart';
 import 'ui.dart';
 
 /// Opens a real live as a viewer.
 void openLive(BuildContext context, LiveRoomInfo r) =>
-    Navigator.push(context, umiRoute((_) => LiveViewerScreen.real(room: r.name, hostName: r.hostName, title: r.title)));
+    Navigator.push(context, umiRoute((_) => LiveViewerScreen.real(room: r.name, hostName: r.hostName, title: r.title, access: r.access, fee: r.fee)));
 
 /// Stable gradient per host so every real live gets its own colour.
 LinearGradient hostGradient(String key) {
@@ -108,7 +109,19 @@ class FeatureLiveCard extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(left: 16, top: 16, right: 16, child: Row(children: [const LiveBadge(scale: 1.25), const Spacer(), _Viewers(r.viewers)])),
+          Positioned(
+            left: 16,
+            top: 16,
+            right: 16,
+            child: Row(
+              children: [
+                const LiveBadge(scale: 1.25),
+                if (r.isPrivate) ...[const SizedBox(width: 6), AccessBadge(subscribers: r.access == 'subscribers', price: r.fee)],
+                const Spacer(),
+                _Viewers(r.viewers),
+              ],
+            ),
+          ),
           Positioned(
             left: 20,
             right: 16,
@@ -205,7 +218,19 @@ class LiveGridCard extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(left: 10, top: 10, right: 10, child: Row(children: [const LiveBadge(), const Spacer(), _Viewers(r.viewers)])),
+          Positioned(
+            left: 10,
+            top: 10,
+            right: 10,
+            child: Row(
+              children: [
+                const LiveBadge(),
+                if (r.isPrivate) ...[const SizedBox(width: 4), AccessBadge(subscribers: r.access == 'subscribers', price: r.fee)],
+                const Spacer(),
+                _Viewers(r.viewers),
+              ],
+            ),
+          ),
           Positioned(
             left: 12,
             right: 12,

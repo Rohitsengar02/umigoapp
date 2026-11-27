@@ -11,7 +11,10 @@ import '../widgets/live_cards.dart';
 import '../widgets/motion.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/ui.dart';
+import 'categories_screen.dart';
 import 'profile_screen.dart';
+import 'reels_screen.dart';
+import '../data/social_data.dart' show creators, reels;
 
 /// Home dashboard: greeting, search on top, live stories, categories, a trending
 /// carousel, Connect, then every live in a grid. Only real lives from the server.
@@ -189,8 +192,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: SearchPill(controller: q, focus: qFocus, hint: 'Search hosts, topics, lives…', onFilter: _sortSheet, filterOn: newest),
                       ),
                     ),
-                    // live stories
-                    if (!searching)
+                    // live stories (only when someone is live)
+                    if (!searching && (loading || all.isNotEmpty))
                       SliverToBoxAdapter(
                         child: SizedBox(
                           height: 112,
@@ -199,14 +202,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             physics: const BouncingScrollPhysics(),
                             padding: const EdgeInsets.fromLTRB(14, 20, 14, 0),
                             children: [
-                              _story(
-                                label: 'Go live',
-                                onTap: () => Navigator.pushNamed(context, '/golive'),
-                                child: Container(
-                                  color: Colors.white,
-                                  child: const Icon(Icons.add_rounded, color: UC.primary, size: 30),
-                                ),
-                              ),
                               if (loading) const StoriesSkeleton(),
                               for (final r in all)
                                 _story(
@@ -225,7 +220,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     // categories
                     SliverToBoxAdapter(
-                      child: Padding(padding: const EdgeInsets.fromLTRB(20, 24, 20, 12), child: SectionHead(searching ? 'Filter' : 'Categories')),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                        child: SectionHead(
+                          searching ? 'Filter' : 'Categories',
+                          action: 'See all',
+                          onAction: () => Navigator.push(context, umiRoute((_) => const CategoriesScreen())),
+                        ),
+                      ),
                     ),
                     SliverToBoxAdapter(
                       child: SizedBox(
@@ -252,6 +254,33 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       SliverToBoxAdapter(child: _Carousel(trending)),
+                    ],
+                    // creators to follow
+                    if (!searching && cat == 'All') ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                          child: SectionHead(
+                            'Creators for you',
+                            sub: 'Follow to get a ping when they go live',
+                            action: 'Reels',
+                            onAction: () => openReels(context, reels, 0),
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: 206,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: creators.length,
+                            separatorBuilder: (_, _) => const SizedBox(width: 12),
+                            itemBuilder: (_, i) => CreatorCard(creators[i]),
+                          ),
+                        ),
+                      ),
                     ],
                     // Connect
                     if (!searching && cat == 'All')

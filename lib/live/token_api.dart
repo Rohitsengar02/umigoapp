@@ -11,6 +11,10 @@ class TokenGrant {
 
 class LiveRoomInfo {
   final String name, title, hostName, hostId, tag;
+
+  /// public, paid or subscribers (set in the Go live steps).
+  final String access;
+  final int fee;
   final int viewers;
   final int startedAt; // ms since epoch, 0 if unknown
   LiveRoomInfo({
@@ -21,7 +25,11 @@ class LiveRoomInfo {
     required this.tag,
     required this.viewers,
     this.startedAt = 0,
+    this.access = 'public',
+    this.fee = 0,
   });
+
+  bool get isPrivate => access != 'public';
 }
 
 /// Talks to the tiny Umigo token server (server/token-server). It signs LiveKit
@@ -36,12 +44,23 @@ class TokenApi {
     required bool host,
     String title = '',
     String tag = '',
+    String access = 'public',
+    int fee = 0,
   }) async {
     final r = await http
         .post(
           Uri.parse('$_base/token'),
           headers: {'content-type': 'application/json'},
-          body: jsonEncode({'room': room, 'identity': identity, 'name': name, 'role': host ? 'host' : 'viewer', 'title': title, 'tag': tag}),
+          body: jsonEncode({
+            'room': room,
+            'identity': identity,
+            'name': name,
+            'role': host ? 'host' : 'viewer',
+            'title': title,
+            'tag': tag,
+            'access': access,
+            'fee': fee,
+          }),
         )
         .timeout(const Duration(seconds: 60)); // free hosting can take ~30s to wake up
     if (r.statusCode != 200) {
@@ -65,6 +84,8 @@ class TokenApi {
         tag: m['tag'] ?? '',
         viewers: (m['viewers'] ?? 0) as int,
         startedAt: (m['startedAt'] ?? 0) as int,
+        access: '${m['access'] ?? 'public'}',
+        fee: (m['fee'] ?? 0) as int,
       );
     }).toList();
   }
