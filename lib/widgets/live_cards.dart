@@ -22,14 +22,14 @@ void openLive(BuildContext context, LiveRoomInfo r) {
   Navigator.push(context, umiRoute((_) => LiveViewerScreen.real(room: r.name, hostName: r.hostName, title: r.title, access: r.access, fee: r.fee)));
 }
 
-/// "Started 4 min ago" for the New tab.
+/// How long a live has been on, short enough for a card chip: "now", "4m", "1h 5m".
 String startedAgo(int startedAt) {
-  if (startedAt <= 0) return 'Just started';
+  if (startedAt <= 0) return 'now';
   final m = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(startedAt)).inMinutes;
-  if (m < 1) return 'Just started';
-  if (m < 60) return '$m min ago';
+  if (m < 1) return 'now';
+  if (m < 60) return '${m}m';
   final h = m ~/ 60;
-  return '${h}h ${m % 60}m ago';
+  return m % 60 == 0 ? '${h}h' : '${h}h ${m % 60}m';
 }
 
 /// Card background: the live's thumbnail when there is one, else the host's gradient.
@@ -108,117 +108,14 @@ class _Viewers extends StatelessWidget {
   Widget build(BuildContext context) => PhotoChip(fmtK(n), leading: const Icon(Icons.visibility_rounded, size: 15, color: Colors.white));
 }
 
-/// Large card for the Home carousel: LIVE and viewers on top, title and host at the bottom.
-class FeatureLiveCard extends StatelessWidget {
-  final LiveRoomInfo r;
-  const FeatureLiveCard(this.r, {super.key});
-  @override
-  Widget build(BuildContext context) => Pressable(
-    onTap: () => openLive(context, r),
-    scale: .97,
-    label: 'Watch ${r.hostName} live',
-    child: Container(
-      decoration: BoxDecoration(
-        gradient: hostGradient(r.hostId),
-        borderRadius: BorderRadius.circular(34),
-        boxShadow: [BoxShadow(color: hostGradient(r.hostId).colors.first.withValues(alpha: .35), blurRadius: 28, offset: const Offset(0, 14))],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          _cardBack(r, 260, 46, -30),
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0xB32E1C30)],
-                  stops: [.4, 1],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            top: 16,
-            right: 16,
-            child: Row(
-              children: [
-                const LiveBadge(scale: 1.25),
-                if (r.isPrivate) ...[const SizedBox(width: 6), AccessBadge(subscribers: r.access == 'subscribers', price: r.fee)],
-                const Spacer(),
-                _Viewers(r.viewers),
-              ],
-            ),
-          ),
-          Positioned(
-            left: 20,
-            right: 16,
-            bottom: 18,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        r.hostName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ds(30, c: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  r.title.isEmpty ? 'Live now' : r.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: ts(15, w: FontWeight.w600, c: Colors.white.withValues(alpha: .85), h: 1.3),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    if (r.tag.isNotEmpty) ...[
-                      PhotoChip(r.tag, leading: const Icon(Icons.local_offer_rounded, size: 14, color: Colors.white)),
-                      const SizedBox(width: 6),
-                    ],
-                    const Spacer(),
-                    Container(
-                      height: 44,
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(99)),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.play_arrow_rounded, color: UC.night, size: 22),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Watch',
-                            style: ts(15, w: FontWeight.w800, c: UC.night),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
 /// Grid card: LIVE + viewers on top, title and host at the bottom.
 class LiveGridCard extends StatelessWidget {
   final LiveRoomInfo r;
 
   /// Shows when the live started instead of the viewer count (New tab).
   final bool showAge;
-  const LiveGridCard(this.r, {super.key, this.showAge = false});
+  final double radius;
+  const LiveGridCard(this.r, {super.key, this.showAge = false, this.radius = 28});
   @override
   Widget build(BuildContext context) => Pressable(
     onTap: () => openLive(context, r),
@@ -227,8 +124,14 @@ class LiveGridCard extends StatelessWidget {
     child: Container(
       decoration: BoxDecoration(
         gradient: hostGradient(r.hostId),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [BoxShadow(color: hostGradient(r.hostId).colors.first.withValues(alpha: .25), blurRadius: 18, offset: const Offset(0, 10))],
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: hostGradient(r.hostId).colors.first.withValues(alpha: radius < 20 ? .12 : .25),
+            blurRadius: radius < 20 ? 8 : 18,
+            offset: Offset(0, radius < 20 ? 3 : 10),
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -349,107 +252,13 @@ class NoLives extends StatelessWidget {
 }
 
 /// 2-column grid of live cards as a sliver.
-Widget liveGridSliver(List<LiveRoomInfo> list, {bool showAge = false}) => SliverGrid.builder(
-  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, mainAxisExtent: 250),
+Widget liveGridSliver(List<LiveRoomInfo> list, {bool showAge = false, double gap = 12, double radius = 28}) => SliverGrid.builder(
+  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: gap, crossAxisSpacing: gap, mainAxisExtent: 250),
   itemCount: list.length,
   itemBuilder: (_, i) => StaggerIn(
     index: i,
     stepMs: 50,
     baseMs: 0,
-    child: LiveGridCard(list[i], showAge: showAge),
+    child: LiveGridCard(list[i], showAge: showAge, radius: radius),
   ),
 );
-
-/// "Live now" row at the top of Home: a portrait thumbnail per live, taken from
-/// the host's camera for real lives (or the creator's photo for demo lives).
-class LiveNowStrip extends StatelessWidget {
-  final List<LiveRoomInfo> lives;
-  const LiveNowStrip(this.lives, {super.key});
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 176,
-    child: ListView.separated(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: lives.length,
-      separatorBuilder: (_, _) => const SizedBox(width: 10),
-      itemBuilder: (_, i) => _LiveThumb(lives[i]),
-    ),
-  );
-}
-
-class _LiveThumb extends StatelessWidget {
-  final LiveRoomInfo r;
-  const _LiveThumb(this.r);
-  @override
-  Widget build(BuildContext context) => Pressable(
-    onTap: () => openLive(context, r),
-    scale: .95,
-    label: 'Watch ${r.hostName} live',
-    child: SizedBox(
-      width: 104,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 146,
-            padding: const EdgeInsets.all(2.5),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.primary, UC.accent, UC.gold]),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [BoxShadow(color: UC.primary.withValues(alpha: .22), blurRadius: 14, offset: const Offset(0, 6))],
-            ),
-            child: Container(
-              decoration: BoxDecoration(gradient: hostGradient(r.hostId), borderRadius: BorderRadius.circular(21.5)),
-              clipBehavior: Clip.antiAlias,
-              child: Stack(
-                children: [
-                  _cardBack(r, 110, 20, -14),
-                  const Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0x33000000), Colors.transparent, Color(0x99000000)],
-                          stops: [0, .4, 1],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Positioned(left: 7, top: 7, child: LiveBadge()),
-                  if (r.isPrivate) const Positioned(right: 7, top: 7, child: Icon(Icons.lock_rounded, size: 15, color: UC.gold)),
-                  Positioned(
-                    left: 8,
-                    bottom: 7,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.visibility_rounded, size: 13, color: Colors.white),
-                        const SizedBox(width: 3),
-                        Text(
-                          fmtK(r.viewers),
-                          style: ts(11.5, w: FontWeight.w800, c: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: Text(
-              r.hostName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: ts(12.5, w: FontWeight.w800, c: UC.ink),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
