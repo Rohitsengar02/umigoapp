@@ -104,7 +104,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             else
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                sliver: SliverList.list(children: _bento(list)),
+                sliver: SliverList.list(
+                  children: categoryBento(list, count: _count, region: region),
+                ),
               ),
             SliverToBoxAdapter(
               child: Padding(
@@ -119,45 +121,46 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       ),
     );
   }
+}
 
-  /// One big tile, then pairs, repeating: a calm rhythm instead of a flat grid.
-  List<Widget> _bento(List<Category> list) {
-    final out = <Widget>[];
-    var i = 0, row = 0;
-    while (i < list.length) {
-      if (row % 3 == 0) {
-        out.add(
-          StaggerIn(
-            index: row,
-            child: _Tile(list[i], count: _count(list[i]), region: region, height: 190, big: true),
+/// Category tiles as a bento: one big tile, then pairs, repeating. A calm rhythm
+/// instead of a flat grid. Used by this screen and by the Home Categories tab.
+List<Widget> categoryBento(List<Category> list, {required int Function(Category) count, String region = 'All India'}) {
+  final out = <Widget>[];
+  var i = 0, row = 0;
+  while (i < list.length) {
+    if (row % 3 == 0) {
+      out.add(
+        StaggerIn(
+          index: row,
+          child: _Tile(list[i], count: count(list[i]), region: region, height: 190, big: true),
+        ),
+      );
+      i++;
+    } else {
+      final a = list[i], b = i + 1 < list.length ? list[i + 1] : null;
+      out.add(
+        StaggerIn(
+          index: row,
+          child: Row(
+            children: [
+              Expanded(
+                child: _Tile(a, count: count(a), region: region, height: 170),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: b == null ? const SizedBox() : _Tile(b, count: count(b), region: region, height: 170),
+              ),
+            ],
           ),
-        );
-        i++;
-      } else {
-        final a = list[i], b = i + 1 < list.length ? list[i + 1] : null;
-        out.add(
-          StaggerIn(
-            index: row,
-            child: Row(
-              children: [
-                Expanded(
-                  child: _Tile(a, count: _count(a), region: region, height: 170),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: b == null ? const SizedBox() : _Tile(b, count: _count(b), region: region, height: 170),
-                ),
-              ],
-            ),
-          ),
-        );
-        i += 2;
-      }
-      out.add(const SizedBox(height: 12));
-      row++;
+        ),
+      );
+      i += 2;
     }
-    return out;
+    out.add(const SizedBox(height: 12));
+    row++;
   }
+  return out;
 }
 
 class _Tile extends StatelessWidget {

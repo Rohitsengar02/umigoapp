@@ -1,17 +1,52 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../data/demo_data.dart' show fmtK;
+import '../data/demo_data.dart' show Host, fmtK;
+import '../data/social_data.dart' show creatorById;
 import '../live/token_api.dart';
 import '../screens/live_viewer_screen.dart';
 import '../theme.dart';
 import 'common.dart';
 import 'pay_sheet.dart';
+import 'skeleton.dart';
 import 'motion.dart';
 import 'ui.dart';
 
-/// Opens a real live as a viewer.
-void openLive(BuildContext context, LiveRoomInfo r) =>
-    Navigator.push(context, umiRoute((_) => LiveViewerScreen.real(room: r.name, hostName: r.hostName, title: r.title, access: r.access, fee: r.fee)));
+/// Opens a live as a viewer: a real room, or the creator's demo live.
+void openLive(BuildContext context, LiveRoomInfo r) {
+  final c = r.demoId == null ? null : creatorById(r.demoId!);
+  if (c != null) {
+    final h = Host(c.id, r.hostName, c.img, r.title, c.region, fmtK(r.viewers), c.cat);
+    Navigator.push(context, umiRoute((_) => LiveViewerScreen.demo(h)));
+    return;
+  }
+  Navigator.push(context, umiRoute((_) => LiveViewerScreen.real(room: r.name, hostName: r.hostName, title: r.title, access: r.access, fee: r.fee)));
+}
+
+/// "Started 4 min ago" for the New tab.
+String startedAgo(int startedAt) {
+  if (startedAt <= 0) return 'Just started';
+  final m = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(startedAt)).inMinutes;
+  if (m < 1) return 'Just started';
+  if (m < 60) return '$m min ago';
+  final h = m ~/ 60;
+  return '${h}h ${m % 60}m ago';
+}
+
+/// Card background: the live's thumbnail when there is one, else the host's gradient.
+Widget _cardBack(LiveRoomInfo r, double initialSize, double top, double right) => r.img != null
+    ? Positioned.fill(child: fadeInAsset(r.img!))
+    : Positioned.fill(
+        child: Stack(
+          children: [
+            _CardGlow(r.hostId),
+            Positioned(
+              right: right,
+              top: top,
+              child: Text(_initial(r.hostName), style: ds(initialSize, c: Colors.white.withValues(alpha: .15))),
+            ),
+          ],
+        ),
+      );
 
 /// Stable gradient per host so every real live gets its own colour.
 LinearGradient hostGradient(String key) {
@@ -91,12 +126,7 @@ class FeatureLiveCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          _CardGlow(r.hostId),
-          Positioned(
-            right: -30,
-            top: 46,
-            child: Text(_initial(r.hostName), style: ds(260, c: Colors.white.withValues(alpha: .16))),
-          ),
+          _cardBack(r, 260, 46, -30),
           const Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -185,7 +215,10 @@ class FeatureLiveCard extends StatelessWidget {
 /// Grid card: LIVE + viewers on top, title and host at the bottom.
 class LiveGridCard extends StatelessWidget {
   final LiveRoomInfo r;
-  const LiveGridCard(this.r, {super.key});
+
+  /// Shows when the live started instead of the viewer count (New tab).
+  final bool showAge;
+  const LiveGridCard(this.r, {super.key, this.showAge = false});
   @override
   Widget build(BuildContext context) => Pressable(
     onTap: () => openLive(context, r),
@@ -200,12 +233,7 @@ class LiveGridCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          _CardGlow(r.hostId),
-          Positioned(
-            right: -24,
-            top: 40,
-            child: Text(_initial(r.hostName), style: ds(160, c: Colors.white.withValues(alpha: .15))),
-          ),
+          _cardBack(r, 160, 40, -24),
           const Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -227,7 +255,10 @@ class LiveGridCard extends StatelessWidget {
                 const LiveBadge(),
                 if (r.isPrivate) ...[const SizedBox(width: 4), AccessBadge(subscribers: r.access == 'subscribers', price: r.fee)],
                 const Spacer(),
-                _Viewers(r.viewers),
+                if (showAge)
+                  PhotoChip(startedAgo(r.startedAt), leading: const Icon(Icons.schedule_rounded, size: 14, color: Colors.white))
+                else
+                  _Viewers(r.viewers),
               ],
             ),
           ),
@@ -250,7 +281,7 @@ class LiveGridCard extends StatelessWidget {
                   ),
                 Row(
                   children: [
-                    Avatar(name: r.hostName, size: 26, border: Colors.white, borderW: 1.5),
+                    Avatar(name: r.hostName, img: r.demoId != null ? r.img : null, size: 26, border: Colors.white, borderW: 1.5),
                     const SizedBox(width: 7),
                     Expanded(
                       child: Text(
@@ -318,8 +349,107 @@ class NoLives extends StatelessWidget {
 }
 
 /// 2-column grid of live cards as a sliver.
-Widget liveGridSliver(List<LiveRoomInfo> list) => SliverGrid.builder(
+Widget liveGridSliver(List<LiveRoomInfo> list, {bool showAge = false}) => SliverGrid.builder(
   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, mainAxisExtent: 250),
   itemCount: list.length,
-  itemBuilder: (_, i) => StaggerIn(index: i, stepMs: 50, baseMs: 0, child: LiveGridCard(list[i])),
+  itemBuilder: (_, i) => StaggerIn(
+    index: i,
+    stepMs: 50,
+    baseMs: 0,
+    child: LiveGridCard(list[i], showAge: showAge),
+  ),
 );
+
+/// "Live now" row at the top of Home: a portrait thumbnail per live, taken from
+/// the host's camera for real lives (or the creator's photo for demo lives).
+class LiveNowStrip extends StatelessWidget {
+  final List<LiveRoomInfo> lives;
+  const LiveNowStrip(this.lives, {super.key});
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 176,
+    child: ListView.separated(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: lives.length,
+      separatorBuilder: (_, _) => const SizedBox(width: 10),
+      itemBuilder: (_, i) => _LiveThumb(lives[i]),
+    ),
+  );
+}
+
+class _LiveThumb extends StatelessWidget {
+  final LiveRoomInfo r;
+  const _LiveThumb(this.r);
+  @override
+  Widget build(BuildContext context) => Pressable(
+    onTap: () => openLive(context, r),
+    scale: .95,
+    label: 'Watch ${r.hostName} live',
+    child: SizedBox(
+      width: 104,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 146,
+            padding: const EdgeInsets.all(2.5),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.primary, UC.accent, UC.gold]),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [BoxShadow(color: UC.primary.withValues(alpha: .22), blurRadius: 14, offset: const Offset(0, 6))],
+            ),
+            child: Container(
+              decoration: BoxDecoration(gradient: hostGradient(r.hostId), borderRadius: BorderRadius.circular(21.5)),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                children: [
+                  _cardBack(r, 110, 20, -14),
+                  const Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0x33000000), Colors.transparent, Color(0x99000000)],
+                          stops: [0, .4, 1],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Positioned(left: 7, top: 7, child: LiveBadge()),
+                  if (r.isPrivate) const Positioned(right: 7, top: 7, child: Icon(Icons.lock_rounded, size: 15, color: UC.gold)),
+                  Positioned(
+                    left: 8,
+                    bottom: 7,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.visibility_rounded, size: 13, color: Colors.white),
+                        const SizedBox(width: 3),
+                        Text(
+                          fmtK(r.viewers),
+                          style: ts(11.5, w: FontWeight.w800, c: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              r.hostName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: ts(12.5, w: FontWeight.w800, c: UC.ink),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}

@@ -14,31 +14,21 @@ import '../widgets/ui.dart';
 import 'categories_screen.dart';
 import 'profile_screen.dart';
 import 'reels_screen.dart';
-import '../data/social_data.dart' show creators, reels;
+import '../data/social_data.dart' show Category, allCategories, creators, reels;
 
-/// Home dashboard: greeting, search on top, live stories, categories, a trending
-/// carousel, Connect, then every live in a grid. Only real lives from the server.
+/// Home: greeting, search, a "Live now" row of thumbnails, then three tabs.
+/// Feed = trending + every live, Categories = all categories, New = newest lives.
+/// Real lives from the server come first, demo lives after them.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-const _cats = [
-  ('All', Icons.apps_rounded, UC.primary),
-  ('Following', Icons.favorite_rounded, Color(0xFFE5486F)),
-  ('Music', Icons.music_note_rounded, Color(0xFF8E4FA0)),
-  ('Gaming', Icons.sports_esports_rounded, Color(0xFF3B6FE0)),
-  ('Talk', Icons.forum_rounded, Color(0xFF12A15F)),
-  ('Dance', Icons.nightlife_rounded, Color(0xFFF2711C)),
-  ('Comedy', Icons.sentiment_very_satisfied_rounded, Color(0xFFD99A00)),
-  ('Fitness', Icons.fitness_center_rounded, Color(0xFF0E9C9B)),
-  ('Cooking', Icons.restaurant_rounded, Color(0xFFD9485F)),
-  ('Study', Icons.menu_book_rounded, Color(0xFF6B4A6E)),
-];
+const _tabs = ['Feed', 'Categories', 'New'];
 
 class _HomeScreenState extends State<HomeScreen> {
-  String cat = 'All';
+  String tab = 'Feed';
   bool newest = false;
   final q = TextEditingController();
   final qFocus = FocusNode();
@@ -63,17 +53,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return r.tag.toLowerCase().contains(s) || r.title.toLowerCase().contains(s) || r.hostName.toLowerCase().contains(s);
   }
 
-  List<LiveRoomInfo> _visible(List<LiveRoomInfo> all) {
-    var list = switch (cat) {
-      'All' => [...all],
-      'Following' => all.where((r) => AppState.I.isFollowing(r.hostId)).toList(),
-      _ => all.where((r) => _match(r, cat)).toList(),
-    };
+  List<LiveRoomInfo> _visible(List<LiveRoomInfo> all, {required bool byNew}) {
+    var list = [...all];
     final term = q.text.trim();
     if (term.isNotEmpty) list = list.where((r) => _match(r, term)).toList();
-    newest ? list.sort((a, b) => b.startedAt.compareTo(a.startedAt)) : list.sort((a, b) => b.viewers.compareTo(a.viewers));
+    byNew ? list.sort((a, b) => b.startedAt.compareTo(a.startedAt)) : list.sort((a, b) => b.viewers.compareTo(a.viewers));
     return list;
   }
+
+  /// Lives in a category right now: the demo count plus real lives tagged with it.
+  int _catCount(Category c, List<LiveRoomInfo> real) => c.lives + real.where((r) => r.tag.toLowerCase() == c.name.toLowerCase()).length;
 
   String get _greeting {
     final h = DateTime.now().hour;
@@ -129,11 +118,23 @@ class _HomeScreenState extends State<HomeScreen> {
         listenable: Listenable.merge([feed, AppState.I, q]),
         builder: (context, _) {
           final st = AppState.I;
-          final all = feed.others;
-          final list = _visible(all);
-          final searching = q.text.trim().isNotEmpty;
-          final trending = ([...all]..sort((a, b) => b.viewers.compareTo(a.viewers))).take(6).toList();
-          final loading = !feed.loadedOnce && feed.serverConfigured;
+          final real = feed.others;
+          final all = feed.withDemo;
+          final term = q.text.trim();
+          final searching = term.isNotEmpty;
+          final isNew = tab == 'New';
+          final list = _visible(all, byNew: isNew || newest);
+          // real lives lead the row (newest snapshot thumbnails), demo lives follow
+          int byViewers(LiveRoomInfo a, LiveRoomInfo b) => b.viewers.compareTo(a.viewers);
+          final onTop = [
+            ...([...real]..sort(byViewers)),
+            ...(all.where((r) => r.demoId != null).toList()..sort(byViewers)),
+          ];
+          final trending = ([...all]..sort(byViewers)).take(6).toList();
+          final cats = allCategories
+              .where((c) => !searching || c.name.toLowerCase().contains(term.toLowerCase()) || c.blurb.toLowerCase().contains(term.toLowerCase()))
+              .toList();
+          final loading = !feed.loadedOnce && feed.serverConfigured && all.isEmpty;
           return RefreshIndicator(
             color: UC.primary,
             edgeOffset: pad.top,
@@ -189,143 +190,54 @@ class _HomeScreenState extends State<HomeScreen> {
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                        child: SearchPill(controller: q, focus: qFocus, hint: 'Search hosts, topics, lives…', onFilter: _sortSheet, filterOn: newest),
-                      ),
-                    ),
-                    // live stories (only when someone is live)
-                    if (!searching && (loading || all.isNotEmpty))
-                      SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 112,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(14, 20, 14, 0),
-                            children: [
-                              if (loading) const StoriesSkeleton(),
-                              for (final r in all)
-                                _story(
-                                  label: r.hostName,
-                                  live: true,
-                                  onTap: () => openLive(context, r),
-                                  child: Container(
-                                    decoration: BoxDecoration(gradient: hostGradient(r.hostId)),
-                                    alignment: Alignment.center,
-                                    child: Text(r.hostName.isEmpty ? '?' : r.hostName.characters.first.toUpperCase(), style: ds(26, c: Colors.white)),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    // categories
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                        child: SectionHead(
-                          searching ? 'Filter' : 'Categories',
-                          action: 'See all',
-                          onAction: () => Navigator.push(context, umiRoute((_) => const CategoriesScreen())),
+                        child: SearchPill(
+                          controller: q,
+                          focus: qFocus,
+                          hint: tab == 'Categories' ? 'Search categories…' : 'Search hosts, topics, lives…',
+                          onFilter: _sortSheet,
+                          filterOn: newest,
                         ),
                       ),
                     ),
-                    SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 104,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          itemCount: _cats.length,
-                          separatorBuilder: (_, _) => const SizedBox(width: 4),
-                          itemBuilder: (_, i) {
-                            final (name, icon, tint) = _cats[i];
-                            return CategoryBubble(label: name, icon: icon, tint: tint, selected: cat == name, onTap: () => setState(() => cat = name));
-                          },
-                        ),
-                      ),
-                    ),
-                    // trending carousel
-                    if (!searching && cat == 'All' && trending.isNotEmpty) ...[
+                    // whoever is live, on top, with a thumbnail from their live
+                    if (!searching && (loading || onTop.isNotEmpty)) ...[
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-                          child: SectionHead('Trending now', sub: 'The most watched lives right now'),
-                        ),
-                      ),
-                      SliverToBoxAdapter(child: _Carousel(trending)),
-                    ],
-                    // creators to follow
-                    if (!searching && cat == 'All') ...[
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
                           child: SectionHead(
-                            'Creators for you',
-                            sub: 'Follow to get a ping when they go live',
-                            action: 'Reels',
-                            onAction: () => openReels(context, reels, 0),
+                            'Live now',
+                            sub: '${onTop.length} ${onTop.length == 1 ? 'person is' : 'people are'} live',
+                            trailing: feed.loading
+                                ? const Padding(
+                                    padding: EdgeInsets.only(bottom: 4),
+                                    child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: UC.primary)),
+                                  )
+                                : null,
                           ),
                         ),
                       ),
                       SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 206,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: creators.length,
-                            separatorBuilder: (_, _) => const SizedBox(width: 12),
-                            itemBuilder: (_, i) => CreatorCard(creators[i]),
-                          ),
-                        ),
+                        child: loading
+                            ? const SizedBox(
+                                height: 112,
+                                child: Padding(padding: EdgeInsets.symmetric(horizontal: 14), child: StoriesSkeleton()),
+                              )
+                            : LiveNowStrip(onTop),
                       ),
                     ],
-                    // Connect
-                    if (!searching && cat == 'All')
-                      SliverToBoxAdapter(
-                        child: Padding(padding: const EdgeInsets.fromLTRB(16, 22, 16, 0), child: _connect(all)),
-                      ),
+                    // Feed · Categories · New
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 26, 20, 12),
-                        child: SectionHead(
-                          searching ? 'Results' : (cat == 'All' ? 'Live now' : cat),
-                          sub: searching
-                              ? '${list.length} ${list.length == 1 ? 'live matches' : 'lives match'} “${q.text.trim()}”'
-                              : (newest ? 'Newest first' : 'Most watched first'),
-                          trailing: feed.loading
-                              ? const Padding(
-                                  padding: EdgeInsets.only(bottom: 4),
-                                  child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: UC.primary)),
-                                )
-                              : null,
-                        ),
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                        child: SlideSegmented(items: _tabs, value: tab, height: 48, onChanged: (v) => setState(() => tab = v)),
                       ),
                     ),
                   ]),
-                  if (loading)
-                    SliverPadding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 0), sliver: liveGridSkeletonSliver())
-                  else if (list.isEmpty && feed.loadedOnce)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                        child: NoLives(
-                          serverConfigured: feed.serverConfigured,
-                          error: feed.error,
-                          emptyText: searching
-                              ? 'No lives match “${q.text.trim()}”.'
-                              : cat == 'Following'
-                              ? 'Nobody you follow is live.'
-                              : cat != 'All'
-                              ? 'No $cat lives right now.'
-                              : 'Nobody is live right now.',
-                        ),
-                      ),
-                    )
-                  else
-                    SliverPadding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 0), sliver: liveGridSliver(list)),
+                  ...switch (tab) {
+                    'Categories' => _categoriesTab(cats, real),
+                    'New' => _livesTab(list, newTab: true, searching: searching),
+                    _ => _feedTab(list, trending, searching: searching),
+                  },
                   SliverToBoxAdapter(child: SizedBox(height: navSpace(context))),
                 ],
               ),
@@ -336,41 +248,131 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _story({required String label, required Widget child, bool live = false, VoidCallback? onTap}) => Pressable(
-    onTap: onTap,
-    label: label,
-    child: Container(
-      width: 72,
-      margin: const EdgeInsets.only(right: 8),
-      child: Column(
-        children: [
-          Container(
-            width: 68,
-            height: 68,
-            padding: const EdgeInsets.all(2.5),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: live ? const SweepGradient(colors: [UC.primary, UC.accent, UC.gold, UC.primary]) : null,
-              color: live ? null : UC.card,
-              boxShadow: [BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .10), blurRadius: 14, offset: const Offset(0, 6))],
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(2.5),
-              decoration: BoxDecoration(color: UC.card, shape: BoxShape.circle),
-              child: ClipOval(child: child),
+  /// Feed: trending carousel, creators, Connect, then every live.
+  List<Widget> _feedTab(List<LiveRoomInfo> list, List<LiveRoomInfo> trending, {required bool searching}) => [
+    ...staggerSlivers([
+      if (!searching && trending.isNotEmpty) ...[
+        SliverToBoxAdapter(
+          key: const ValueKey('feed-trend-h'),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 14),
+            child: SectionHead('Trending now', sub: 'The most watched lives right now'),
+          ),
+        ),
+        SliverToBoxAdapter(key: const ValueKey('feed-trend'), child: _Carousel(trending)),
+      ],
+      if (!searching) ...[
+        SliverToBoxAdapter(
+          key: const ValueKey('feed-creators-h'),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+            child: SectionHead(
+              'Creators for you',
+              sub: 'Follow to get a ping when they go live',
+              action: 'Reels',
+              onAction: () => openReels(context, reels, 0),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: ts(12.5, w: FontWeight.w700, c: UC.ink),
+        ),
+        SliverToBoxAdapter(
+          key: const ValueKey('feed-creators'),
+          child: SizedBox(
+            height: 206,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: creators.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (_, i) => CreatorCard(creators[i]),
+            ),
           ),
-        ],
+        ),
+        SliverToBoxAdapter(
+          key: const ValueKey('feed-connect'),
+          child: Padding(padding: const EdgeInsets.fromLTRB(16, 22, 16, 0), child: _connect(list)),
+        ),
+      ],
+    ]),
+    ..._livesTab(list, newTab: false, searching: searching),
+  ];
+
+  /// Every live as a grid. In the New tab the newest come first and show when they started.
+  List<Widget> _livesTab(List<LiveRoomInfo> list, {required bool newTab, required bool searching}) {
+    final term = q.text.trim();
+    return [
+      SliverToBoxAdapter(
+        key: ValueKey('lives-h-$newTab'),
+        child: StaggerIn(
+          index: 0,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, newTab ? 22 : 26, 20, 12),
+            child: SectionHead(
+              searching ? 'Results' : (newTab ? 'Just started' : 'All lives'),
+              sub: searching
+                  ? '${list.length} ${list.length == 1 ? 'live matches' : 'lives match'} “$term”'
+                  : newTab
+                  ? 'Newest lives first. Be one of the first to join'
+                  : (newest ? 'Newest first' : 'Most watched first'),
+            ),
+          ),
+        ),
+      ),
+      if (list.isEmpty)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: NoLives(
+              serverConfigured: feed.serverConfigured,
+              error: feed.error,
+              emptyText: searching ? 'No lives match “$term”.' : 'Nobody is live right now.',
+            ),
+          ),
+        )
+      else
+        SliverPadding(
+          key: ValueKey('lives-$newTab'),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: liveGridSliver(list, showAge: newTab),
+        ),
+    ];
+  }
+
+  /// Every category as a bento of photo tiles; a tap opens its lives.
+  List<Widget> _categoriesTab(List<Category> cats, List<LiveRoomInfo> real) => [
+    SliverToBoxAdapter(
+      key: const ValueKey('cats-h'),
+      child: StaggerIn(
+        index: 0,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
+          child: SectionHead(
+            'All categories',
+            sub: '${cats.length} categories',
+            action: 'Regions',
+            onAction: () => Navigator.push(context, umiRoute((_) => const CategoriesScreen())),
+          ),
+        ),
       ),
     ),
-  );
+    if (cats.isEmpty)
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Text(
+            'No category called “${q.text.trim()}”',
+            textAlign: TextAlign.center,
+            style: ts(15, w: FontWeight.w700, c: UC.muted),
+          ),
+        ),
+      )
+    else
+      SliverPadding(
+        key: const ValueKey('cats'),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        sliver: SliverList.list(children: categoryBento(cats, count: (c) => _catCount(c, real))),
+      ),
+  ];
 
   Widget _connect(List<LiveRoomInfo> all) => SoftCard(
     padding: const EdgeInsets.fromLTRB(20, 18, 14, 18),

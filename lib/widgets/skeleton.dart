@@ -174,23 +174,30 @@ class LiveConnectingSkeleton extends StatelessWidget {
   }
 }
 
-/// Image.asset with a shimmer while the first frame decodes, then a quick fade in.
-Widget fadeInAsset(String path, {double? w, double? h, BoxFit fit = BoxFit.cover}) => Image.asset(
-  path,
-  width: w,
-  height: h,
-  fit: fit,
-  frameBuilder: (context, child, frame, sync) {
-    if (sync) return child;
-    return Stack(
-      fit: StackFit.passthrough,
-      children: [
-        if (frame == null)
-          Positioned.fill(
-            child: Shimmer(child: Container(color: UC.surface)),
-          ),
-        AnimatedOpacity(opacity: frame == null ? 0 : 1, duration: const Duration(milliseconds: 220), child: child),
-      ],
-    );
-  },
-);
+/// Image.asset (or Image.network for http URLs, e.g. live thumbnails) with a
+/// shimmer while the first frame decodes, then a quick fade in.
+Widget fadeInAsset(String path, {double? w, double? h, BoxFit fit = BoxFit.cover}) => path.startsWith('http')
+    ? Image.network(
+        path,
+        width: w,
+        height: h,
+        fit: fit,
+        gaplessPlayback: true, // keep the old snapshot while a newer one loads
+        frameBuilder: _fadeFrame,
+        errorBuilder: (_, _, _) => Container(width: w, height: h, color: UC.surface),
+      )
+    : Image.asset(path, width: w, height: h, fit: fit, frameBuilder: _fadeFrame);
+
+Widget _fadeFrame(BuildContext context, Widget child, int? frame, bool sync) {
+  if (sync) return child;
+  return Stack(
+    fit: StackFit.passthrough,
+    children: [
+      if (frame == null)
+        Positioned.fill(
+          child: Shimmer(child: Container(color: UC.surface)),
+        ),
+      AnimatedOpacity(opacity: frame == null ? 0 : 1, duration: const Duration(milliseconds: 220), child: child),
+    ],
+  );
+}
