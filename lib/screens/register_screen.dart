@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/mascot.dart';
 import '../widgets/motion.dart';
+import '../widgets/ui.dart';
 
 /// Sign up as a run of separate screens: one step per screen, each with an animated
 /// title, Umi reacting to what you type, and fields that arrive one after another.
@@ -144,74 +145,77 @@ class _StepScreenState extends State<_StepScreen> {
     final (mood, look, bubble) = umi;
     final fields = _fields();
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          _Header(step: step, mood: mood, look: look, bubble: bubble, bad: mood == 'oops'),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(20, 22, 20, pad.bottom + 24),
-              children: [
-                for (var i = 0; i < fields.length; i++) StaggerIn(index: i, child: fields[i]),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 220),
-                  child: error.isEmpty
-                      ? const SizedBox(width: double.infinity)
-                      : Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.error_rounded, size: 16, color: UC.red),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  error,
-                                  style: ts(12.5, w: FontWeight.w700, c: UC.red),
+      body: AuroraBg(
+        child: Column(
+          children: [
+            _Header(step: step, mood: mood, look: look, bubble: bubble, bad: mood == 'oops'),
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(20, 18, 20, pad.bottom + 24),
+                children: [
+                  for (var i = 0; i < fields.length; i++) StaggerIn(index: i, child: fields[i]),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 220),
+                    child: error.isEmpty
+                        ? const SizedBox(width: double.infinity)
+                        : Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error_rounded, size: 16, color: UC.red),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    error,
+                                    style: ts(12.5, w: FontWeight.w700, c: UC.red),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                ),
-                const SizedBox(height: 18),
-                StaggerIn(
-                  index: fields.length,
-                  child: PrimaryButton(
-                    step == 5
-                        ? 'Create account'
-                        : step == 2
-                        ? 'Verify & continue'
-                        : 'Continue',
-                    icon: Icons.arrow_forward_rounded,
-                    onTap: next,
                   ),
-                ),
-                if (step == 1) ...[
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 18),
                   StaggerIn(
-                    index: fields.length + 1,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Already have an account?',
-                          style: ts(13, w: FontWeight.w600, c: UC.muted),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-                          child: Text(
-                            'Log in',
-                            style: ts(14, w: FontWeight.w800, c: UC.primary),
-                          ),
-                        ),
-                      ],
+                    index: fields.length,
+                    child: PrimaryButton(
+                      step == 5
+                          ? 'Create account'
+                          : step == 2
+                          ? 'Verify & continue'
+                          : 'Continue',
+                      icon: Icons.arrow_forward_rounded,
+                      dark: step != 5,
+                      onTap: next,
                     ),
                   ),
+                  if (step == 1) ...[
+                    const SizedBox(height: 14),
+                    StaggerIn(
+                      index: fields.length + 1,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Already have an account?',
+                            style: ts(13, w: FontWeight.w600, c: UC.muted),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                            child: Text(
+                              'Log in',
+                              style: ts(14, w: FontWeight.w800, c: UC.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -397,12 +401,13 @@ class _StepScreenState extends State<_StepScreen> {
   }
 
   Widget _dob(TextEditingController c, String hint, int len, FocusNode? f) => Container(
-    height: 54,
+    height: 56,
     padding: const EdgeInsets.symmetric(horizontal: 12),
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: UC.line, width: 1.5),
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      boxShadow: [BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .07), blurRadius: 16, offset: const Offset(0, 6))],
     ),
     child: TextField(
       controller: c,
@@ -421,7 +426,7 @@ class _StepScreenState extends State<_StepScreen> {
   );
 }
 
-/// Gradient header: step name strip, big animated title, Umi and the speech bubble.
+/// Light header: back, segmented progress, big animated title, Umi and a speech bubble.
 class _Header extends StatelessWidget {
   final int step;
   final String mood, bubble;
@@ -432,135 +437,117 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(8, pad.top + 2, 18, 16),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.primary, Color(0xFFE5677F), UC.accent]),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(34)),
-      ),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, pad.top + 8, 20, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              IconButton(
-                tooltip: 'Back',
-                onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-              ),
-              const Spacer(),
-              Text('umigo', style: ds(20, c: Colors.white)),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // step name strip: done names fade, current one is bold white
-                SizedBox(
-                  height: 18,
-                  child: ListView.separated(
-                    controller: ScrollController(initialScrollOffset: step >= 4 ? 140 : 0),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: 5,
-                    separatorBuilder: (_, _) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Icon(Icons.chevron_right_rounded, size: 14, color: Colors.white.withValues(alpha: .5)),
-                    ),
-                    itemBuilder: (_, i) => StaggerIn(
-                      index: i,
-                      stepMs: 50,
-                      baseMs: 60,
-                      dy: 10,
-                      child: Text(
-                        _labels[i].toUpperCase(),
-                        style: ts(
-                          10.5,
-                          w: FontWeight.w800,
-                          ls: 1.1,
-                          c: i + 1 == step ? Colors.white : Colors.white.withValues(alpha: i + 1 < step ? .75 : .45),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+              GlassCircle(Icons.arrow_back_ios_new_rounded, label: 'Back', size: 42, onTap: () => Navigator.maybePop(context)),
+              const SizedBox(width: 12),
+              // one bar per step; the current one fills in
+              Expanded(
+                child: Row(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          StaggerIn(
-                            index: 0,
-                            baseMs: 80,
-                            dy: 8,
-                            child: Text(
-                              'STEP $step OF 5',
-                              style: ts(11, w: FontWeight.w800, ls: 1.6, c: UC.ink.withValues(alpha: .55)),
+                    for (var i = 1; i <= 5; i++)
+                      Expanded(
+                        child: Container(
+                          height: 6,
+                          margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                          decoration: BoxDecoration(color: UC.ink.withValues(alpha: .08), borderRadius: BorderRadius.circular(9)),
+                          alignment: Alignment.centerLeft,
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween(begin: i < step ? 1 : 0, end: i <= step ? 1 : 0),
+                            duration: const Duration(milliseconds: 700),
+                            curve: Curves.easeOutCubic,
+                            builder: (_, v, _) => FractionallySizedBox(
+                              widthFactor: v,
+                              child: Container(
+                                decoration: BoxDecoration(gradient: UC.brandGradient, borderRadius: BorderRadius.circular(9)),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          TextReveal(
-                            _titles[step - 1],
-                            style: ds(33, c: Colors.white, h: 1.02),
-                            delay: const Duration(milliseconds: 180),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                    Mascot(mood: mood, look: look, size: 104),
                   ],
                 ),
-                const SizedBox(height: 10),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 260),
-                  transitionBuilder: (c, a) => FadeTransition(
-                    opacity: a,
-                    child: SlideTransition(
-                      position: Tween(begin: const Offset(0, .25), end: Offset.zero).animate(a),
-                      child: c,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '$step/5',
+                style: ts(14, w: FontWeight.w800, c: UC.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    StaggerIn(index: 0, baseMs: 60, dy: 8, child: Eyebrow('Step $step · ${_labels[step - 1]}')),
+                    const SizedBox(height: 8),
+                    TextReveal(
+                      _titles[step - 1],
+                      style: ds(36, c: UC.ink, h: 1.04),
+                      delay: const Duration(milliseconds: 160),
                     ),
-                  ),
-                  child: Container(
-                    key: ValueKey(bubble),
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(18),
-                        topRight: Radius.circular(4),
-                        bottomRight: Radius.circular(18),
-                        bottomLeft: Radius.circular(18),
-                      ),
-                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 108,
+                height: 108,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: .75),
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [BoxShadow(color: (bad ? UC.red : UC.primary).withValues(alpha: .16), blurRadius: 30, offset: const Offset(0, 12))],
+                ),
+                alignment: Alignment.center,
+                child: Mascot(mood: mood, look: look, size: 88),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            transitionBuilder: (c, a) => FadeTransition(
+              opacity: a,
+              child: SlideTransition(
+                position: Tween(begin: const Offset(0, .25), end: Offset.zero).animate(a),
+                child: c,
+              ),
+            ),
+            child: Container(
+              key: ValueKey(bubble),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(6),
+                  bottomRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(20),
+                ),
+                boxShadow: [BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .08), blurRadius: 20, offset: const Offset(0, 8))],
+              ),
+              child: Row(
+                children: [
+                  Icon(bad ? Icons.error_rounded : Icons.auto_awesome_rounded, size: 18, color: bad ? UC.red : UC.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
                     child: Text(
                       bubble,
-                      style: ts(13.5, w: FontWeight.w800, c: bad ? UC.red : UC.ink, h: 1.3),
+                      style: ts(14.5, w: FontWeight.w700, c: bad ? UC.red : UC.ink, h: 1.35),
                     ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                // continuous progress line (animates from the previous step)
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: (step - 1) / 5, end: step / 5),
-                  duration: const Duration(milliseconds: 700),
-                  curve: Curves.easeOutCubic,
-                  builder: (_, v, _) => ClipRRect(
-                    borderRadius: BorderRadius.circular(9),
-                    child: LinearProgressIndicator(
-                      value: v,
-                      minHeight: 5,
-                      backgroundColor: Colors.white.withValues(alpha: .3),
-                      valueColor: const AlwaysStoppedAnimation(Colors.white),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -590,88 +577,83 @@ class _DoneScreenState extends State<_DoneScreen> with SingleTickerProviderState
     final d = widget.d;
     final pad = MediaQuery.paddingOf(context);
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [UC.soft, Colors.white]),
-        ),
-        padding: EdgeInsets.fromLTRB(22, pad.top + 30, 22, pad.bottom + 22),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: IgnorePointer(child: CustomPaint(painter: _Confetti(_burst))),
-            ),
-            Column(
-              children: [
-                const Mascot(mood: 'party', size: 170),
-                const SizedBox(height: 18),
-                TextReveal(
-                  "You're in,\n${d.first}!",
-                  style: ds(40, c: UC.ink),
-                  align: TextAlign.center,
-                  delay: const Duration(milliseconds: 250),
-                ),
-                const SizedBox(height: 12),
-                StaggerIn(
-                  index: 4,
-                  child: Text(
-                    'We added 100 welcome coins to your wallet. Go say hi to someone live.',
-                    textAlign: TextAlign.center,
-                    style: ts(14.5, w: FontWeight.w600, c: UC.muted, h: 1.45),
+      body: AuroraBg(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(22, pad.top + 30, 22, pad.bottom + 22),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: IgnorePointer(child: CustomPaint(painter: _Confetti(_burst))),
+              ),
+              Column(
+                children: [
+                  const Mascot(mood: 'party', size: 170),
+                  const SizedBox(height: 18),
+                  TextReveal(
+                    "You're in,\n${d.first}!",
+                    style: ds(40, c: UC.ink),
+                    align: TextAlign.center,
+                    delay: const Duration(milliseconds: 250),
                   ),
-                ),
-                const SizedBox(height: 22),
-                StaggerIn(
-                  index: 6,
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                      boxShadow: [BoxShadow(color: UC.inkA(.08), blurRadius: 26, offset: const Offset(0, 10))],
+                  const SizedBox(height: 12),
+                  StaggerIn(
+                    index: 4,
+                    child: Text(
+                      'We added 100 welcome coins to your wallet. Go say hi to someone live.',
+                      textAlign: TextAlign.center,
+                      style: ts(14.5, w: FontWeight.w600, c: UC.muted, h: 1.45),
                     ),
-                    child: Row(
-                      children: [
-                        Avatar(img: 'assets/img/me.jpg', size: 50, border: UC.primary),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(d.name.text, style: ts(16, w: FontWeight.w800)),
-                              Text(
-                                '@${d.user.text} · ${d.interests.take(3).join(', ')}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: ts(12.5, w: FontWeight.w600, c: UC.muted),
-                              ),
-                            ],
+                  ),
+                  const SizedBox(height: 22),
+                  StaggerIn(
+                    index: 6,
+                    child: SoftCard(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        children: [
+                          Avatar(img: 'assets/img/me.jpg', size: 50, border: UC.primary),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(d.name.text, style: ts(16, w: FontWeight.w800)),
+                                Text(
+                                  '@${d.user.text} · ${d.interests.take(3).join(', ')}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: ts(12.5, w: FontWeight.w600, c: UC.muted),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const CoinDot(size: 22),
-                        const SizedBox(width: 4),
-                        Text(
-                          '+100',
-                          style: ts(14, w: FontWeight.w800, c: UC.accentText),
-                        ),
-                      ],
+                          const CoinDot(size: 22),
+                          const SizedBox(width: 4),
+                          Text(
+                            '+100',
+                            style: ts(14, w: FontWeight.w800, c: UC.accentText),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const Spacer(),
-                StaggerIn(
-                  index: 8,
-                  child: PrimaryButton(
-                    'Start watching',
-                    icon: Icons.play_arrow_rounded,
-                    onTap: () {
-                      AppState.I.addCoins(100);
-                      Navigator.pushNamedAndRemoveUntil(context, '/app', (_) => false);
-                    },
+                  const Spacer(),
+                  StaggerIn(
+                    index: 8,
+                    child: PrimaryButton(
+                      'Start watching',
+                      dark: true,
+                      icon: Icons.play_arrow_rounded,
+                      onTap: () {
+                        AppState.I.addCoins(100);
+                        Navigator.pushNamedAndRemoveUntil(context, '/app', (_) => false);
+                      },
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

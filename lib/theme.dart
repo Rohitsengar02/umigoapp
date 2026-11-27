@@ -20,6 +20,13 @@ class UC {
   static const greenSoft = Color(0xFFE7F8EF);
   static const red = Color(0xFFF04438);
 
+  // Soft backdrop for the glass look: a near-white base with pastel light behind it.
+  static const bg = Color(0xFFFCF8FA);
+  static const lilac = Color(0xFFEDE1F8);
+  static const blush = Color(0xFFFFDCE7);
+  static const peach = Color(0xFFFFE6D8);
+  static const mint = Color(0xFFE3F6EC);
+
   static Color inkA(double o) => ink.withValues(alpha: o);
 
   static const coinGradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [gold, accent]);
@@ -41,7 +48,7 @@ ThemeData buildTheme() {
     useMaterial3: true,
     fontFamily: kFont,
     colorScheme: ColorScheme.fromSeed(seedColor: UC.primary, primary: UC.primary, surface: Colors.white),
-    scaffoldBackgroundColor: Colors.white,
+    scaffoldBackgroundColor: UC.bg,
     splashFactory: InkSparkle.splashFactory,
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
@@ -57,11 +64,18 @@ ThemeData buildTheme() {
   return base.copyWith(
     textTheme: base.textTheme.apply(bodyColor: UC.ink, displayColor: UC.ink, fontFamily: kFont),
     inputDecorationTheme: const InputDecorationTheme(border: InputBorder.none, isDense: true),
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+    ),
+    dividerTheme: const DividerThemeData(color: UC.line, thickness: 1),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: UC.ink,
       behavior: SnackBarBehavior.floating,
       contentTextStyle: ts(13.5, c: Colors.white),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
     ),
   );
 }

@@ -199,7 +199,7 @@ Widget _sheet(BuildContext context, String title, List<Widget> children) => Safe
           ),
         ),
         const SizedBox(height: 14),
-        Text(title, style: ts(18, w: FontWeight.w800)),
+        Text(title, style: ds(23)),
         const SizedBox(height: 10),
         ...children,
       ],
@@ -212,7 +212,7 @@ Widget _option(IconData icon, String label, String sub, VoidCallback onTap, {Col
   leading: Container(
     width: 40,
     height: 40,
-    decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(14)),
     child: Icon(icon, color: color, size: 21),
   ),
   title: Text(
@@ -232,7 +232,7 @@ const reportReasons = ['Nudity or sexual content', 'Hate or harassment', 'Scam o
 Future<void> showReportSheet(BuildContext context, LiveSession s, {LiveEvent? target}) => showModalBottomSheet(
   context: context,
   backgroundColor: Colors.white,
-  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
   builder: (c) => _sheet(c, target == null ? 'Report this live' : 'Report ${target.name}', [
     if (target != null)
       Padding(
@@ -262,7 +262,7 @@ Future<void> showReportSheet(BuildContext context, LiveSession s, {LiveEvent? ta
 Future<void> showViewerActions(BuildContext context, LiveSession s, LiveEvent e) => showModalBottomSheet(
   context: context,
   backgroundColor: Colors.white,
-  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
   builder: (c) {
     void act(String cmd, {int sec = 600}) {
       s.hostAction(cmd, e, sec: sec);
@@ -290,7 +290,7 @@ Future<void> showModPanel(BuildContext context, LiveSession s) => showModalBotto
   context: context,
   isScrollControlled: true,
   backgroundColor: Colors.white,
-  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
   builder: (c) => _ModPanel(s: s),
 );
 

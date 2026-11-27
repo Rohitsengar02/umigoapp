@@ -1,10 +1,12 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 
 import 'screens/buy_coins_screen.dart';
 import 'screens/go_live_screen.dart';
 import 'screens/inbox_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/server_settings_screen.dart';
 import 'screens/shell.dart';
@@ -30,11 +32,14 @@ class UmigoApp extends StatelessWidget {
       title: 'Umigo',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
+      // Let a mouse drag scroll lists and swipe pages too (web preview on a laptop).
+      scrollBehavior: const MaterialScrollBehavior().copyWith(dragDevices: PointerDeviceKind.values.toSet()),
       // On a wide screen (desktop browser) show the app inside a phone-sized frame.
       builder: (context, child) => _PhoneFrame(child: child!),
       initialRoute: '/',
       routes: {
         '/': (_) => const SplashScreen(),
+        '/onboarding': (_) => const OnboardingScreen(),
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
         '/app': (_) => const Shell(),
@@ -59,7 +64,7 @@ class _PhoneFrame extends StatelessWidget {
     final h = (size.height - 40).clamp(500.0, 860.0);
     final w = h * 390 / 844;
     return ColoredBox(
-      color: const Color(0xFFF3E9EE),
+      color: const Color(0xFFEFE6EE),
       child: Center(
         child: Container(
           width: w,

@@ -78,13 +78,12 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
               top: pad.top + 10,
               child: Row(
                 children: [
-                  Container(
-                    height: 42,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(color: UC.inkA(.45), borderRadius: BorderRadius.circular(99)),
+                  GlassPill(
+                    height: 50,
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
                     child: Row(
                       children: [
-                        Avatar(img: h?.img, name: s.hostName, size: 34, border: UC.primary),
+                        Avatar(img: h?.img, name: s.hostName, size: 38, border: UC.primary),
                         const SizedBox(width: 8),
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -105,11 +104,12 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                           onTap: () => setState(() => AppState.I.toggleFollow(s.hostIdentity, s.hostName)),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 160),
-                            height: 32,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            height: 38,
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: following ? Colors.white.withValues(alpha: .2) : UC.primary,
+                              color: following ? Colors.white.withValues(alpha: .2) : null,
+                              gradient: following ? null : UC.brandGradient,
                               borderRadius: BorderRadius.circular(99),
                             ),
                             child: Text(
@@ -140,13 +140,13 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  RoundGlassButton(Icons.close_rounded, tooltip: 'Leave live', size: 34, onTap: () => Navigator.pop(context)),
+                  RoundGlassButton(Icons.close_rounded, tooltip: 'Leave live', size: 42, onTap: () => Navigator.pop(context)),
                 ],
               ),
             ),
             Positioned(
               left: 10,
-              top: pad.top + 60,
+              top: pad.top + 70,
               child: Row(
                 children: [
                   GlassPill(
@@ -240,10 +240,10 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      height: 44,
-                      padding: const EdgeInsets.only(left: 14, right: 4),
-                      decoration: BoxDecoration(color: UC.inkA(.5), borderRadius: BorderRadius.circular(99)),
+                    child: GlassPill(
+                      expand: true,
+                      height: 48,
+                      padding: const EdgeInsets.only(left: 16, right: 5),
                       child: Row(
                         children: [
                           Expanded(
@@ -264,13 +264,7 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                               ),
                             ),
                           ),
-                          RoundGlassButton(
-                            Icons.send_rounded,
-                            tooltip: 'Send comment',
-                            size: 36,
-                            gradient: const LinearGradient(colors: [UC.primary, UC.primary]),
-                            onTap: send,
-                          ),
+                          RoundGlassButton(Icons.send_rounded, tooltip: 'Send comment', size: 38, gradient: UC.brandGradient, onTap: send),
                         ],
                       ),
                     ),

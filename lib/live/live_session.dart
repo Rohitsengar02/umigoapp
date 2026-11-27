@@ -137,6 +137,7 @@ class LiveSession extends ChangeNotifier {
   // In-app guard: when the server bot is not in the room, every phone filters the
   // chat it receives, and the host's phone is the referee (strikes, mute, remove, ban).
   bool get inAppGuard => !guardOn && room != null;
+
   /// Umi Guard is protecting this live, by the server bot or inside the app.
   bool get guardActive => guardOn || room != null;
   final Map<String, int> _strikes = {};

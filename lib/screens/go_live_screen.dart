@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/fx_sheet.dart';
 import '../widgets/live_widgets.dart';
+import '../widgets/ui.dart';
 import 'host_live_screen.dart';
 
 /// Camera preview + title, mode and tag, then a 3-2-1 countdown into the host view.
@@ -114,57 +115,69 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
           const Positioned.fill(child: ShadeOverlay()),
           Positioned(
             top: pad.top + 10,
-            left: 10,
-            right: 10,
-            child: Row(
-              children: [
-                RoundGlassButton(Icons.close_rounded, tooltip: 'Close', size: 38, onTap: () => Navigator.pop(context)),
-                const Spacer(),
-                for (final t in [
-                  ('flip', Icons.flip_camera_ios_rounded, 'Flip'),
-                  ('beauty', Icons.auto_awesome_rounded, 'Beauty'),
-                  ('filter', Icons.filter_vintage_rounded, 'Looks'),
-                  ('ar', Icons.face_retouching_natural, 'AR'),
-                  ('mic', Icons.mic_rounded, 'Mic'),
-                ])
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Column(
-                      children: [
-                        RoundGlassButton(
-                          t.$2,
-                          tooltip: t.$3,
-                          size: 40,
-                          gradient: _toolOn(t.$1) ? const LinearGradient(colors: [UC.primary, UC.primary]) : null,
-                          onTap: () {
-                            if (t.$1 == 'flip') {
-                              _flip();
-                            } else if (const ['beauty', 'filter', 'ar'].contains(t.$1)) {
-                              showFxSheet(context, tab: const ['beauty', 'filter', 'ar'].indexOf(t.$1));
-                            } else {
-                              setState(() => tools[t.$1] = !(tools[t.$1] ?? false));
-                            }
-                          },
+            left: 14,
+            child: RoundGlassButton(Icons.close_rounded, tooltip: 'Close', size: 44, onTap: () => Navigator.pop(context)),
+          ),
+          // camera tools as a vertical glass rail, like a camera app
+          Positioned(
+            top: pad.top + 10,
+            right: 14,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: Glass(
+                tint: const Color(0x33000000),
+                shadow: false,
+                radius: BorderRadius.circular(99),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                child: Column(
+                  children: [
+                    for (final t in [
+                      ('flip', Icons.flip_camera_ios_rounded, 'Flip'),
+                      ('beauty', Icons.auto_awesome_rounded, 'Beauty'),
+                      ('filter', Icons.filter_vintage_rounded, 'Looks'),
+                      ('ar', Icons.face_retouching_natural, 'AR'),
+                      ('mic', Icons.mic_rounded, 'Mic'),
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 5),
+                        child: Column(
+                          children: [
+                            RoundGlassButton(
+                              t.$2,
+                              tooltip: t.$3,
+                              size: 42,
+                              gradient: _toolOn(t.$1) ? UC.brandGradient : null,
+                              onTap: () {
+                                if (t.$1 == 'flip') {
+                                  _flip();
+                                } else if (const ['beauty', 'filter', 'ar'].contains(t.$1)) {
+                                  showFxSheet(context, tab: const ['beauty', 'filter', 'ar'].indexOf(t.$1));
+                                } else {
+                                  setState(() => tools[t.$1] = !(tools[t.$1] ?? false));
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              t.$3,
+                              style: ts(11, w: FontWeight.w700, c: Colors.white),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          t.$3,
-                          style: ts(10.5, w: FontWeight.w800, c: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
           if (camError != null)
             Positioned(
-              top: pad.top + 80,
-              left: 16,
-              right: 16,
+              top: pad.top + 64,
+              left: 14,
+              right: 90,
               child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: UC.inkA(.6), borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: UC.inkA(.6), borderRadius: BorderRadius.circular(16)),
                 child: Text(
                   camError!,
                   style: ts(12.5, w: FontWeight.w700, c: Colors.white),
@@ -179,15 +192,45 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
-                        child: Text(
-                          '$count',
-                          key: ValueKey(count),
-                          style: ts(120, w: FontWeight.w800, c: Colors.white),
+                      SizedBox(
+                        width: 190,
+                        height: 190,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            TweenAnimationBuilder<double>(
+                              key: ValueKey('ring$count'),
+                              tween: Tween(begin: 0, end: 1),
+                              duration: const Duration(seconds: 1),
+                              builder: (_, v, _) => SizedBox.expand(
+                                child: CircularProgressIndicator(
+                                  value: v,
+                                  strokeWidth: 5,
+                                  strokeCap: StrokeCap.round,
+                                  color: Colors.white,
+                                  backgroundColor: Colors.white.withValues(alpha: .18),
+                                ),
+                              ),
+                            ),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 320),
+                              transitionBuilder: (c, a) => FadeTransition(
+                                opacity: a,
+                                child: ScaleTransition(
+                                  scale: Tween(begin: 1.6, end: 1.0).animate(CurvedAnimation(parent: a, curve: Curves.easeOutBack)),
+                                  child: c,
+                                ),
+                              ),
+                              child: Text(
+                                '$count',
+                                key: ValueKey(count),
+                                style: ds(110, c: Colors.white),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      const SizedBox(height: 18),
                       Text(
                         'Going live…',
                         style: ts(18, w: FontWeight.w800, c: Colors.white),
@@ -210,96 +253,88 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
             ),
           if (count == null)
             Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                padding: EdgeInsets.fromLTRB(12, 12, 12, pad.bottom + 16),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-                ),
+              left: 10,
+              right: 10,
+              bottom: pad.bottom + 10,
+              child: Glass(
+                radius: BorderRadius.circular(34),
+                tint: const Color(0xE6FFFFFF),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Center(
-                      child: Segmented(items: const ['Video', 'Audio room', 'PK battle'], value: mode, onChanged: (v) => setState(() => mode = v)),
+                      child: Container(
+                        width: 40,
+                        height: 5,
+                        decoration: BoxDecoration(color: UC.ink.withValues(alpha: .12), borderRadius: BorderRadius.circular(9)),
+                      ),
                     ),
                     const SizedBox(height: 12),
+                    SlideSegmented(items: const ['Video', 'Audio room', 'PK battle'], value: mode, onChanged: (v) => setState(() => mode = v)),
+                    const SizedBox(height: 12),
                     Container(
-                      height: 50,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(color: UC.surface, borderRadius: BorderRadius.circular(16)),
+                      height: 54,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .08), blurRadius: 14, offset: const Offset(0, 5))],
+                      ),
                       child: Row(
                         children: [
-                          Text(
-                            'Title',
-                            style: ts(12.5, w: FontWeight.w800, c: UC.muted),
-                          ),
+                          const Icon(Icons.edit_rounded, size: 18, color: UC.primary),
                           const SizedBox(width: 10),
                           Expanded(
                             child: TextField(
                               controller: title,
-                              style: ts(15, w: FontWeight.w800),
+                              style: ts(16, w: FontWeight.w700),
                               maxLength: 40,
-                              decoration: const InputDecoration(counterText: ''),
+                              decoration: InputDecoration(
+                                counterText: '',
+                                hintText: 'Give your live a title',
+                                hintStyle: ts(16, w: FontWeight.w500, c: UC.muted),
+                              ),
                             ),
                           ),
-                          const Icon(Icons.edit_rounded, size: 16, color: UC.deep),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     SizedBox(
-                      height: 36,
+                      height: 42,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        clipBehavior: Clip.none,
                         children: [
                           for (final g in ['Music', 'Chat', 'Gaming', 'Dance', 'Study', 'Cooking'])
                             Padding(
-                              padding: const EdgeInsets.only(right: 6),
+                              padding: const EdgeInsets.only(right: 8),
                               child: ChoiceChipX('#$g', on: g == tag, onTap: () => setState(() => tag = g)),
                             ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const Icon(Icons.public_rounded, size: 18, color: UC.deep),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Who can watch',
-                          style: ts(13, w: FontWeight.w700, c: UC.muted),
-                        ),
-                        const Spacer(),
-                        Text(
-                          'Everyone',
-                          style: ts(13, w: FontWeight.w800, c: UC.deep),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(AppState.I.serverConfigured ? Icons.cloud_done_rounded : Icons.science_rounded, size: 18, color: UC.deep),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            AppState.I.serverConfigured ? 'Real live on your LiveKit server' : 'Demo mode (no server set). Set one in Me › Live server',
-                            style: ts(12.5, w: FontWeight.w700, c: UC.muted),
-                          ),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 12),
-                    PrimaryButton('Go Live', icon: Icons.videocam_rounded, onTap: start),
+                    Row(
+                      children: [
+                        _info(Icons.public_rounded, 'Public'),
+                        const SizedBox(width: 8),
+                        _info(
+                          AppState.I.serverConfigured ? Icons.cloud_done_rounded : Icons.science_rounded,
+                          AppState.I.serverConfigured ? 'Real live' : 'Demo mode',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    PrimaryButton('Go live', icon: Icons.videocam_rounded, onTap: start),
                     const SizedBox(height: 8),
                     Text(
                       'By going live you agree to the Community Guidelines',
                       textAlign: TextAlign.center,
-                      style: ts(11.5, w: FontWeight.w600, c: UC.muted),
+                      style: ts(12, w: FontWeight.w500, c: UC.muted),
                     ),
                   ],
                 ),
@@ -309,4 +344,26 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
       ),
     );
   }
+
+  Widget _info(IconData icon, String text) => Expanded(
+    child: Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(color: UC.ink.withValues(alpha: .05), borderRadius: BorderRadius.circular(99)),
+      child: Row(
+        children: [
+          Icon(icon, size: 17, color: UC.deep),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: ts(13, w: FontWeight.w700, c: UC.ink),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

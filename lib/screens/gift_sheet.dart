@@ -41,7 +41,7 @@ class _GiftSheetState extends State<GiftSheet> {
         padding: EdgeInsets.fromLTRB(12, 8, 12, pad + 18),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -56,7 +56,7 @@ class _GiftSheetState extends State<GiftSheet> {
             ),
             const SizedBox(height: 10),
             SizedBox(
-              height: 32,
+              height: 36,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
@@ -64,13 +64,13 @@ class _GiftSheetState extends State<GiftSheet> {
                     GestureDetector(
                       onTap: () => setState(() => tab = t),
                       child: Container(
-                        margin: const EdgeInsets.only(right: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 11),
+                        margin: const EdgeInsets.only(right: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(color: t == tab ? UC.soft : Colors.transparent, borderRadius: BorderRadius.circular(99)),
+                        decoration: BoxDecoration(color: t == tab ? UC.ink : UC.ink.withValues(alpha: .05), borderRadius: BorderRadius.circular(99)),
                         child: Text(
                           t,
-                          style: ts(13, w: FontWeight.w800, c: t == tab ? UC.deep : UC.muted),
+                          style: ts(13.5, w: FontWeight.w800, c: t == tab ? Colors.white : UC.muted),
                         ),
                       ),
                     ),
