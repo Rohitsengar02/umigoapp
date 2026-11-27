@@ -61,7 +61,7 @@ class Bone extends StatelessWidget {
     width: w,
     height: h,
     decoration: BoxDecoration(
-      color: UC.surface,
+      color: const Color(0xFFF3E8EE),
       shape: circle ? BoxShape.circle : BoxShape.rectangle,
       borderRadius: circle ? null : BorderRadius.circular(r),
     ),
@@ -75,9 +75,9 @@ Widget liveGridSkeletonSliver({int count = 4}) => SliverToBoxAdapter(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, mainAxisExtent: 220),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, mainAxisExtent: 250),
       itemCount: count,
-      itemBuilder: (_, _) => const Bone(r: 20),
+      itemBuilder: (_, _) => const Bone(r: 28),
     ),
   ),
 );
@@ -125,13 +125,7 @@ class StoriesSkeleton extends StatelessWidget {
         for (var i = 0; i < 4; i++)
           const Padding(
             padding: EdgeInsets.only(right: 12),
-            child: Column(
-              children: [
-                Bone(w: 66, h: 66, circle: true),
-                SizedBox(height: 7),
-                Bone(w: 44, h: 10, r: 5),
-              ],
-            ),
+            child: Column(children: [Bone(w: 66, h: 66, circle: true), SizedBox(height: 7), Bone(w: 44, h: 10, r: 5)]),
           ),
       ],
     ),
@@ -164,7 +158,15 @@ class LiveConnectingSkeleton extends StatelessWidget {
             const Spacer(),
             for (final w in [220.0, 170.0, 240.0]) Padding(padding: const EdgeInsets.only(bottom: 8), child: dark(w, 30, r: 12)),
             const SizedBox(height: 10),
-            Row(children: [Expanded(child: dark(double.infinity, 44, r: 22)), const SizedBox(width: 8), dark(44, 44, circle: true), const SizedBox(width: 6), dark(44, 44, circle: true)]),
+            Row(
+              children: [
+                Expanded(child: dark(double.infinity, 44, r: 22)),
+                const SizedBox(width: 8),
+                dark(44, 44, circle: true),
+                const SizedBox(width: 6),
+                dark(44, 44, circle: true),
+              ],
+            ),
           ],
         ),
       ),
@@ -183,7 +185,10 @@ Widget fadeInAsset(String path, {double? w, double? h, BoxFit fit = BoxFit.cover
     return Stack(
       fit: StackFit.passthrough,
       children: [
-        if (frame == null) Positioned.fill(child: Shimmer(child: Container(color: UC.surface))),
+        if (frame == null)
+          Positioned.fill(
+            child: Shimmer(child: Container(color: UC.surface)),
+          ),
         AnimatedOpacity(opacity: frame == null ? 0 : 1, duration: const Duration(milliseconds: 220), child: child),
       ],
     );

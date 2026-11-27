@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../data/demo_data.dart';
 import '../theme.dart';
 import 'skeleton.dart';
+import 'ui.dart';
 
 class CoinDot extends StatelessWidget {
   final double size;
@@ -45,9 +46,13 @@ class _LiveBadgeState extends State<LiveBadge> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     final s = widget.scale;
     return Container(
-      height: 20 * s,
-      padding: EdgeInsets.symmetric(horizontal: 7 * s),
-      decoration: BoxDecoration(color: UC.primary, borderRadius: BorderRadius.circular(6 * s)),
+      height: 22 * s,
+      padding: EdgeInsets.symmetric(horizontal: 8 * s),
+      decoration: BoxDecoration(
+        color: UC.primary,
+        borderRadius: BorderRadius.circular(99),
+        boxShadow: [BoxShadow(color: UC.primary.withValues(alpha: .45), blurRadius: 10 * s, offset: Offset(0, 3 * s))],
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -108,29 +113,62 @@ class PrimaryButton extends StatelessWidget {
   final Color fg;
   final double height;
   final IconData? icon;
-  const PrimaryButton(this.label, {super.key, this.onTap, this.color = UC.primary, this.fg = Colors.white, this.height = 54, this.icon});
+
+  /// true = dark ink pill with a rose icon disc (the calm "Continue" style).
+  final bool dark;
+  const PrimaryButton(this.label, {super.key, this.onTap, this.color = UC.primary, this.fg = Colors.white, this.height = 56, this.icon, this.dark = false});
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: height,
-    width: double.infinity,
-    child: FilledButton(
-      onPressed: onTap,
-      style: FilledButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: fg,
-        disabledBackgroundColor: color.withValues(alpha: .45),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
-        textStyle: ts(16, w: FontWeight.w800),
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    final useGradient = !dark && color == UC.primary;
+    final bg = dark ? UC.pill : color;
+    return Pressable(
+      onTap: onTap,
+      label: label,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: enabled ? 1 : .5,
+        child: Container(
+          height: height,
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: useGradient ? null : bg,
+            gradient: useGradient
+                ? const LinearGradient(colors: [UC.primary, Color(0xFFE5677F), UC.accent], begin: Alignment.centerLeft, end: Alignment.centerRight)
+                : dark
+                ? const LinearGradient(colors: [UC.violet, Color(0xFF7B2C82)], begin: Alignment.centerLeft, end: Alignment.centerRight)
+                : null,
+            borderRadius: BorderRadius.circular(99),
+            boxShadow: enabled ? [BoxShadow(color: (dark ? UC.pill : bg).withValues(alpha: .28), blurRadius: 22, offset: const Offset(0, 10))] : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                dark
+                    ? Container(
+                        width: height * .62,
+                        height: height * .62,
+                        decoration: const BoxDecoration(gradient: UC.brandGradient, shape: BoxShape.circle),
+                        child: Icon(icon, size: height * .34, color: Colors.white),
+                      )
+                    : Icon(icon, size: 20, color: fg),
+                SizedBox(width: dark ? 12 : 8),
+              ],
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: ts(height >= 50 ? 16.5 : 14.5, w: FontWeight.w800, c: dark ? Colors.white : fg),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: 8)],
-          Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
-        ],
-      ),
-    ),
-  );
+    );
+  }
 }
 
 class ChoiceChipX extends StatelessWidget {
@@ -140,61 +178,60 @@ class ChoiceChipX extends StatelessWidget {
   final bool pill;
   const ChoiceChipX(this.label, {super.key, required this.on, required this.onTap, this.pill = true});
   @override
-  Widget build(BuildContext context) => Material(
-    color: on ? UC.soft : Colors.white,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(pill ? 99 : 12),
-      side: BorderSide(color: on ? UC.primary : UC.line, width: 1.5),
-    ),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(pill ? 99 : 12),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        child: Text(
-          label,
-          style: ts(13, w: FontWeight.w800, c: on ? UC.deep : UC.ink),
-        ),
+  Widget build(BuildContext context) => Pressable(
+    onTap: onTap,
+    scale: .94,
+    label: label,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: on ? UC.pill : UC.card,
+        borderRadius: BorderRadius.circular(pill ? 99 : 14),
+        border: Border.all(color: on ? UC.pill : UC.card),
+        boxShadow: [
+          BoxShadow(
+            color: (on ? UC.pill : UC.deep).withValues(alpha: on ? .22 : .07),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            child: on
+                ? const Padding(
+                    padding: EdgeInsets.only(right: 5),
+                    child: Icon(Icons.check_rounded, size: 16, color: Colors.white),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          Text(
+            label,
+            style: ts(14, w: FontWeight.w700, c: on ? Colors.white : UC.ink),
+          ),
+        ],
       ),
     ),
   );
 }
 
-/// Segmented tabs on a soft background (Phone/Email, Activity/Messages...).
+/// Segmented tabs (Phone/Email, Activity/Messages...) with a sliding thumb.
 class Segmented extends StatelessWidget {
   final List<String> items;
   final String value;
   final ValueChanged<String> onChanged;
-  final Color bg;
-  const Segmented({super.key, required this.items, required this.value, required this.onChanged, this.bg = UC.surface});
+  final Color? bg;
+  final double? width;
+  const Segmented({super.key, required this.items, required this.value, required this.onChanged, this.bg, this.width});
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(3),
-    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(13)),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final i in items)
-          GestureDetector(
-            onTap: () => onChanged(i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              height: 34,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: i == value ? Colors.white : Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: i == value ? [BoxShadow(color: UC.inkA(.08), blurRadius: 8, offset: const Offset(0, 2))] : null,
-              ),
-              child: Text(
-                i,
-                style: ts(13, w: FontWeight.w800, c: i == value ? UC.ink : UC.muted),
-              ),
-            ),
-          ),
-      ],
-    ),
+  Widget build(BuildContext context) => SizedBox(
+    width: width ?? items.length * 124.0,
+    child: SlideSegmented(items: items, value: value, onChanged: onChanged),
   );
 }
 
@@ -231,19 +268,29 @@ class FieldBox extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: ts(12.5, w: FontWeight.w800, c: UC.muted),
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Text(
+            label,
+            style: ts(13, w: FontWeight.w700, c: UC.muted),
+          ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          height: 52,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          duration: const Duration(milliseconds: 180),
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: error ? UC.red : (focused ? UC.primary : UC.line), width: focused || error ? 2 : 1.5),
+            color: UC.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: error ? UC.red : (focused ? UC.primary : Colors.white), width: focused || error ? 1.8 : 1),
+            boxShadow: [
+              BoxShadow(
+                color: focused ? UC.primary.withValues(alpha: .16) : const Color(0xFF6B4A6E).withValues(alpha: .07),
+                blurRadius: focused ? 18 : 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -256,7 +303,7 @@ class FieldBox extends StatelessWidget {
                   keyboardType: type,
                   maxLength: maxLength,
                   onChanged: onChanged,
-                  style: ts(15, w: FontWeight.w700, c: UC.ink),
+                  style: ts(16, w: FontWeight.w600, c: UC.ink),
                   cursorColor: UC.primary,
                   decoration: InputDecoration(
                     hintText: hint,
@@ -280,27 +327,33 @@ class CoinPill extends StatelessWidget {
   final bool plus;
   const CoinPill(this.amount, {super.key, this.onTap, this.plus = true});
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) => Pressable(
     onTap: onTap,
+    label: '${fmtIn(amount)} coins',
     child: Container(
-      height: 38,
-      padding: EdgeInsets.only(left: 8, right: plus ? 5 : 12),
-      decoration: BoxDecoration(color: UC.accentSoft, borderRadius: BorderRadius.circular(99)),
+      height: 44,
+      padding: EdgeInsets.only(left: 8, right: plus ? 6 : 14),
+      decoration: BoxDecoration(
+        color: UC.card,
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: UC.card),
+        boxShadow: [BoxShadow(color: UC.accent.withValues(alpha: .25), blurRadius: 18, offset: const Offset(0, 6))],
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CoinDot(size: 20),
-          const SizedBox(width: 6),
+          const CoinDot(size: 24),
+          const SizedBox(width: 7),
           Text(
             fmtIn(amount),
-            style: ts(14, w: FontWeight.w800, c: UC.accentText),
+            style: ts(15, w: FontWeight.w800, c: UC.accentText),
           ),
           if (plus) ...[
-            const SizedBox(width: 6),
+            const SizedBox(width: 7),
             Container(
-              width: 28,
-              height: 28,
-              decoration: const BoxDecoration(color: UC.primary, shape: BoxShape.circle),
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(gradient: UC.brandGradient, shape: BoxShape.circle),
               child: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
             ),
           ],
@@ -314,26 +367,28 @@ class CoinPill extends StatelessWidget {
 class TopBar extends StatelessWidget {
   final String title;
   final List<Widget> actions;
-  final Color fg;
+  final Color? fg;
   final bool back;
-  const TopBar(this.title, {super.key, this.actions = const [], this.fg = UC.ink, this.back = true});
+  const TopBar(this.title, {super.key, this.actions = const [], this.fg, this.back = true});
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(6, 8, 12, 8),
+    padding: EdgeInsets.fromLTRB(back ? 14 : 20, 8, 12, 8),
     child: Row(
       children: [
-        if (back)
-          IconButton(
-            tooltip: 'Back',
-            onPressed: () => Navigator.maybePop(context),
-            icon: Icon(Icons.arrow_back_rounded, color: fg),
-          )
-        else
+        if (back) ...[
+          fg == null
+              ? GlassCircle(Icons.arrow_back_ios_new_rounded, label: 'Back', size: 42, onTap: () => Navigator.maybePop(context))
+              : IconButton(
+                  tooltip: 'Back',
+                  onPressed: () => Navigator.maybePop(context),
+                  icon: Icon(Icons.arrow_back_ios_new_rounded, color: fg),
+                ),
           const SizedBox(width: 12),
+        ],
         Expanded(
           child: Text(
             title,
-            style: ts(20, w: FontWeight.w800, c: fg, ls: -0.5),
+            style: back ? ds(22, c: fg) : ds(30, c: fg),
           ),
         ),
         ...actions,
@@ -356,15 +411,13 @@ class WithBack extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
     return Scaffold(
-      body: Column(
+      body: Stack(
         children: [
-          SizedBox(height: top),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: IconButton(tooltip: 'Back', onPressed: () => Navigator.maybePop(context), icon: const Icon(Icons.arrow_back_rounded)),
-          ),
-          Expanded(
-            child: MediaQuery.removePadding(context: context, removeTop: true, child: child),
+          Positioned.fill(child: child),
+          Positioned(
+            left: 14,
+            top: top + 8,
+            child: GlassCircle(Icons.arrow_back_ios_new_rounded, label: 'Back', size: 42, onTap: () => Navigator.maybePop(context)),
           ),
         ],
       ),

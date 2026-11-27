@@ -6,9 +6,10 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/live_cards.dart';
-import '../widgets/mascot.dart';
 import '../widgets/motion.dart';
 import '../widgets/skeleton.dart';
+import '../widgets/ui.dart';
+import 'categories_screen.dart';
 import 'leaderboard_screen.dart';
 import 'wallet_screen.dart';
 
@@ -32,6 +33,7 @@ class AppDrawer extends StatelessWidget {
       ),
       (Icons.favorite_rounded, 'My favourite', () => go(const LiveListScreen(kind: LiveListKind.favourite))),
       (Icons.local_fire_department_rounded, 'Trending', () => go(const LiveListScreen(kind: LiveListKind.trending))),
+      (Icons.grid_view_rounded, 'Categories', () => go(const CategoriesScreen())),
       (Icons.history_rounded, 'Watch history', () => go(const WatchHistoryScreen())),
       (Icons.auto_awesome_rounded, 'Recommended', () => go(const LiveListScreen(kind: LiveListKind.recommended))),
       (Icons.lock_rounded, 'Best for private', () => go(const LiveListScreen(kind: LiveListKind.private))),
@@ -67,62 +69,63 @@ class AppDrawer extends StatelessWidget {
     ];
 
     return Drawer(
-      backgroundColor: Colors.white,
-      width: 300,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(28))),
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          Container(
-            padding: EdgeInsets.fromLTRB(18, MediaQuery.paddingOf(context).top + 18, 18, 18),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.primary, UC.accent]),
-              borderRadius: BorderRadius.only(bottomRight: Radius.circular(28)),
-            ),
-            child: Row(
-              children: [
-                Avatar(img: 'assets/img/me.jpg', name: st.name, size: 54, border: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        st.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ds(20, c: Colors.white),
-                      ),
-                      Text(
-                        'ID ${st.displayId} · Lv ${st.level}',
-                        style: ts(12, w: FontWeight.w700, c: Colors.white.withValues(alpha: .9)),
-                      ),
-                    ],
+      backgroundColor: UC.bg,
+      width: 312,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(34))),
+      clipBehavior: Clip.antiAlias,
+      child: AuroraBg(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            Container(
+              margin: EdgeInsets.fromLTRB(14, MediaQuery.paddingOf(context).top + 14, 14, 6),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.primary, Color(0xFFE5677F), UC.accent]),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [BoxShadow(color: UC.primary.withValues(alpha: .3), blurRadius: 24, offset: const Offset(0, 10))],
+              ),
+              child: Row(
+                children: [
+                  Avatar(img: 'assets/img/me.jpg', name: st.name, size: 56, border: Colors.white, borderW: 2.5),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          st.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: ds(20, c: Colors.white),
+                        ),
+                        Text(
+                          'ID ${st.displayId} · Lv ${st.level}',
+                          style: ts(12, w: FontWeight.w700, c: Colors.white.withValues(alpha: .9)),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          ...staggerAll([for (final t in top) _tile(t)], stepMs: 35, baseMs: 120),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-            child: Divider(color: UC.line, height: 1),
-          ),
-          ...staggerAll([for (final t in bottom) _tile(t)], stepMs: 35, baseMs: 380),
-          const SizedBox(height: 20),
-        ],
+            const SizedBox(height: 8),
+            ...staggerAll([for (final t in top) _tile(t)], stepMs: 35, baseMs: 120),
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 8, 20, 8),
+              child: Divider(color: UC.line, height: 1),
+            ),
+            ...staggerAll([for (final t in bottom) _tile(t)], stepMs: 35, baseMs: 380),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _tile((IconData, String, VoidCallback) t) => ListTile(
-    dense: true,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 18),
-    leading: Icon(t.$1, color: UC.deep, size: 22),
-    title: Text(t.$2, style: ts(14.5, w: FontWeight.w700)),
-    trailing: const Icon(Icons.chevron_right_rounded, color: UC.muted),
-    onTap: t.$3,
+  Widget _tile((IconData, String, VoidCallback) t) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 6),
+    child: GroupedRow(icon: t.$1, title: t.$2, onTap: t.$3),
   );
 }
 
@@ -181,99 +184,81 @@ class _LiveListScreenState extends State<LiveListScreen> {
     final (title, sub) = _head;
     final followKind = widget.kind == LiveListKind.following || widget.kind == LiveListKind.favourite;
     return Scaffold(
-      body: ListenableBuilder(
-        listenable: Listenable.merge([feed, AppState.I]),
-        builder: (context, _) {
-          final list = _list(feed.others);
-          final offline = followKind
-              ? AppState.I.following.entries.where((e) => !feed.others.any((r) => r.hostId == e.key)).toList()
-              : <MapEntry<String, String>>[];
-          return RefreshIndicator(
-            color: UC.primary,
-            onRefresh: feed.refresh,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(widget.asTab ? 18 : 4, pad.top + 10, 12, 4),
-                    child: Row(
-                      children: [
-                        if (!widget.asTab)
-                          IconButton(tooltip: 'Back', onPressed: () => Navigator.maybePop(context), icon: const Icon(Icons.arrow_back_rounded)),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              TextReveal(title, style: ds(28)),
-                              Text(
-                                sub,
-                                style: ts(13, w: FontWeight.w700, c: UC.muted),
-                              ),
-                            ],
+      body: AuroraBg(
+        child: ListenableBuilder(
+          listenable: Listenable.merge([feed, AppState.I]),
+          builder: (context, _) {
+            final list = _list(feed.others);
+            final offline = followKind
+                ? AppState.I.following.entries.where((e) => !feed.others.any((r) => r.hostId == e.key)).toList()
+                : <MapEntry<String, String>>[];
+            return RefreshIndicator(
+              color: UC.primary,
+              onRefresh: feed.refresh,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: LargeTitle(title, eyebrow: sub, back: !widget.asTab),
+                  ),
+                  if (!feed.loadedOnce && feed.serverConfigured)
+                    SliverPadding(padding: const EdgeInsets.fromLTRB(16, 14, 16, 12), sliver: liveGridSkeletonSliver())
+                  else if (list.isEmpty && feed.loadedOnce)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                        child: NoLives(
+                          serverConfigured: feed.serverConfigured,
+                          error: feed.error,
+                          emptyText: followKind ? 'Nobody you follow is live.' : 'Nobody is live right now.',
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(padding: const EdgeInsets.fromLTRB(16, 14, 16, 12), sliver: liveGridSliver(list)),
+                  if (followKind && offline.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 8, 12, 6),
+                        child: Text('Offline now', style: ts(15, w: FontWeight.w800)),
+                      ),
+                    ),
+                    SliverList.builder(
+                      itemCount: offline.length,
+                      itemBuilder: (_, i) => ListTile(
+                        leading: Avatar(name: offline[i].value, size: 42),
+                        title: Text(offline[i].value, style: ts(14.5, w: FontWeight.w800)),
+                        subtitle: Text(
+                          'You will see them here when they go live',
+                          style: ts(12, w: FontWeight.w600, c: UC.muted),
+                        ),
+                        trailing: TextButton(
+                          onPressed: () => AppState.I.toggleFollow(offline[i].key, offline[i].value),
+                          child: Text(
+                            'Unfollow',
+                            style: ts(13, w: FontWeight.w800, c: UC.deep),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (!feed.loadedOnce && feed.serverConfigured)
-                  SliverPadding(padding: const EdgeInsets.fromLTRB(12, 14, 12, 12), sliver: liveGridSkeletonSliver())
-                else if (list.isEmpty && feed.loadedOnce)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
-                      child: NoLives(
-                        serverConfigured: feed.serverConfigured,
-                        error: feed.error,
-                        emptyText: followKind ? 'Nobody you follow is live.' : 'Nobody is live right now.',
                       ),
                     ),
-                  )
-                else
-                  SliverPadding(padding: const EdgeInsets.fromLTRB(12, 14, 12, 12), sliver: liveGridSliver(list)),
-                if (followKind && offline.isNotEmpty) ...[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 8, 12, 6),
-                      child: Text('Offline now', style: ts(15, w: FontWeight.w800)),
-                    ),
-                  ),
-                  SliverList.builder(
-                    itemCount: offline.length,
-                    itemBuilder: (_, i) => ListTile(
-                      leading: Avatar(name: offline[i].value, size: 42),
-                      title: Text(offline[i].value, style: ts(14.5, w: FontWeight.w800)),
-                      subtitle: Text(
-                        'You will see them here when they go live',
-                        style: ts(12, w: FontWeight.w600, c: UC.muted),
-                      ),
-                      trailing: TextButton(
-                        onPressed: () => AppState.I.toggleFollow(offline[i].key, offline[i].value),
+                  ],
+                  if (followKind && AppState.I.following.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
                         child: Text(
-                          'Unfollow',
-                          style: ts(13, w: FontWeight.w800, c: UC.deep),
+                          'Tap + Follow while watching a live, and those hosts will show here.',
+                          textAlign: TextAlign.center,
+                          style: ts(13, w: FontWeight.w600, c: UC.muted, h: 1.4),
                         ),
                       ),
                     ),
-                  ),
+                  SliverToBoxAdapter(child: SizedBox(height: widget.asTab ? navSpace(context) : pad.bottom + 20)),
                 ],
-                if (followKind && AppState.I.following.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
-                      child: Text(
-                        'Tap + Follow while watching a live, and those hosts will show here.',
-                        textAlign: TextAlign.center,
-                        style: ts(13, w: FontWeight.w600, c: UC.muted, h: 1.4),
-                      ),
-                    ),
-                  ),
-                SliverToBoxAdapter(child: SizedBox(height: pad.bottom + 20)),
-              ],
-            ),
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -285,53 +270,54 @@ class WatchHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
     return Scaffold(
-      body: ListenableBuilder(
-        listenable: AppState.I,
-        builder: (context, _) {
-          final items = AppState.I.watched.map((w) => w.split('|')).where((p) => p.length >= 4).toList();
-          return Column(
-            children: [
-              SizedBox(height: pad.top),
-              TopBar(
-                'Watch history',
-                actions: [
-                  if (items.isNotEmpty)
-                    TextButton(
-                      onPressed: () {
-                        AppState.I.watched.clear();
-                        AppState.I.addCoins(0); // saves + notifies
-                      },
-                      child: Text(
-                        'Clear',
-                        style: ts(13, w: FontWeight.w800, c: UC.deep),
+      body: AuroraBg(
+        child: ListenableBuilder(
+          listenable: AppState.I,
+          builder: (context, _) {
+            final items = AppState.I.watched.map((w) => w.split('|')).where((p) => p.length >= 4).toList();
+            return Column(
+              children: [
+                LargeTitle(
+                  'Watch history',
+                  actions: [
+                    if (items.isNotEmpty)
+                      TextButton(
+                        onPressed: () {
+                          AppState.I.watched.clear();
+                          AppState.I.addCoins(0); // saves + notifies
+                        },
+                        child: Text(
+                          'Clear',
+                          style: ts(13, w: FontWeight.w800, c: UC.deep),
+                        ),
                       ),
-                    ),
-                ],
-              ),
-              Expanded(
-                child: items.isEmpty
-                    ? const _Empty(Icons.history_rounded, 'Lives you watch will show here.')
-                    : ListView(
-                        padding: EdgeInsets.fromLTRB(8, 0, 8, pad.bottom + 16),
-                        children: staggerAll([
-                          for (final p in items)
-                            ListTile(
-                              leading: Avatar(name: p[1], size: 44),
-                              title: Text(p[1], style: ts(14.5, w: FontWeight.w800)),
-                              subtitle: Text(
-                                '${p[2].isEmpty ? 'Live' : p[2]} · ${_ago(int.tryParse(p[3]) ?? 0)}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: ts(12.5, w: FontWeight.w600, c: UC.muted),
+                  ],
+                ),
+                Expanded(
+                  child: items.isEmpty
+                      ? const _Empty(Icons.history_rounded, 'Lives you watch will show here.')
+                      : ListView(
+                          padding: EdgeInsets.fromLTRB(8, 0, 8, pad.bottom + 16),
+                          children: staggerAll([
+                            for (final p in items)
+                              ListTile(
+                                leading: Avatar(name: p[1], size: 44),
+                                title: Text(p[1], style: ts(14.5, w: FontWeight.w800)),
+                                subtitle: Text(
+                                  '${p[2].isEmpty ? 'Live' : p[2]} · ${_ago(int.tryParse(p[3]) ?? 0)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: ts(12.5, w: FontWeight.w600, c: UC.muted),
+                                ),
+                                trailing: _LiveNowButton(hostId: p[0]),
                               ),
-                              trailing: _LiveNowButton(hostId: p[0]),
-                            ),
-                        ]),
-                      ),
-              ),
-            ],
-          );
-        },
+                          ]),
+                        ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -356,36 +342,6 @@ class _LiveNowButton extends StatelessWidget {
   }
 }
 
-/// Reels tab placeholder.
-class ReelsScreen extends StatelessWidget {
-  const ReelsScreen({super.key});
-  @override
-  Widget build(BuildContext context) => Container(
-    color: UC.ink,
-    alignment: Alignment.center,
-    padding: const EdgeInsets.all(32),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Mascot(mood: 'love', size: 140),
-        const SizedBox(height: 14),
-        TextReveal(
-          'Reels are coming',
-          style: ds(30, c: Colors.white),
-          align: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Short clips from the best lives, swipe up to watch. We are building it next.',
-          textAlign: TextAlign.center,
-          style: ts(14, w: FontWeight.w600, c: Colors.white.withValues(alpha: .8), h: 1.45),
-        ),
-      ],
-    ),
-  );
-}
-
-/// Simple screen for menu items that are not built yet.
 class InfoScreen extends StatelessWidget {
   final String title, text;
   final IconData icon;
@@ -394,12 +350,14 @@ class InfoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
     return Scaffold(
-      body: Column(
-        children: [
-          SizedBox(height: pad.top),
-          TopBar(title),
-          Expanded(child: _Empty(icon, text)),
-        ],
+      body: AuroraBg(
+        child: Column(
+          children: [
+            LargeTitle(title),
+            Expanded(child: _Empty(icon, text)),
+            SizedBox(height: pad.bottom),
+          ],
+        ),
       ),
     );
   }
@@ -419,10 +377,15 @@ class _Empty extends StatelessWidget {
           StaggerIn(
             index: 0,
             child: Container(
-              width: 76,
-              height: 76,
-              decoration: const BoxDecoration(color: UC.soft, shape: BoxShape.circle),
-              child: Icon(icon, size: 36, color: UC.primary),
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [UC.blush, UC.peach], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 4),
+                boxShadow: [BoxShadow(color: UC.primary.withValues(alpha: .18), blurRadius: 30, offset: const Offset(0, 12))],
+              ),
+              child: Icon(icon, size: 42, color: UC.primary),
             ),
           ),
           const SizedBox(height: 16),
@@ -431,7 +394,7 @@ class _Empty extends StatelessWidget {
             child: Text(
               text,
               textAlign: TextAlign.center,
-              style: ts(15, w: FontWeight.w700, c: UC.muted, h: 1.45),
+              style: ts(16, w: FontWeight.w500, c: UC.muted, h: 1.5),
             ),
           ),
         ],

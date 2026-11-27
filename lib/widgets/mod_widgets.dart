@@ -157,7 +157,7 @@ class LiveEndedCard extends StatelessWidget {
   const LiveEndedCard({super.key, required this.text});
   @override
   Widget build(BuildContext context) => Container(
-    color: UC.ink,
+    color: UC.night,
     alignment: Alignment.center,
     padding: const EdgeInsets.all(32),
     child: Column(
@@ -199,7 +199,7 @@ Widget _sheet(BuildContext context, String title, List<Widget> children) => Safe
           ),
         ),
         const SizedBox(height: 14),
-        Text(title, style: ts(18, w: FontWeight.w800)),
+        Text(title, style: ds(23)),
         const SizedBox(height: 10),
         ...children,
       ],
@@ -207,12 +207,12 @@ Widget _sheet(BuildContext context, String title, List<Widget> children) => Safe
   ),
 );
 
-Widget _option(IconData icon, String label, String sub, VoidCallback onTap, {Color color = UC.ink}) => ListTile(
+Widget _option(IconData icon, String label, String sub, VoidCallback onTap, {Color color = UC.deep}) => ListTile(
   contentPadding: EdgeInsets.zero,
   leading: Container(
     width: 40,
     height: 40,
-    decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(14)),
     child: Icon(icon, color: color, size: 21),
   ),
   title: Text(
@@ -231,8 +231,8 @@ const reportReasons = ['Nudity or sexual content', 'Hate or harassment', 'Scam o
 /// Report the host (target == null) or a chat message.
 Future<void> showReportSheet(BuildContext context, LiveSession s, {LiveEvent? target}) => showModalBottomSheet(
   context: context,
-  backgroundColor: Colors.white,
-  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+  backgroundColor: UC.card,
+  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
   builder: (c) => _sheet(c, target == null ? 'Report this live' : 'Report ${target.name}', [
     if (target != null)
       Padding(
@@ -249,7 +249,7 @@ Future<void> showReportSheet(BuildContext context, LiveSession s, {LiveEvent? ta
         contentPadding: EdgeInsets.zero,
         dense: true,
         title: Text(r, style: ts(14.5, w: FontWeight.w700)),
-        trailing: const Icon(Icons.chevron_right_rounded, color: UC.muted),
+        trailing: Icon(Icons.chevron_right_rounded, color: UC.muted),
         onTap: () {
           s.report(r, who: target?.senderId ?? '');
           Navigator.pop(c);
@@ -261,8 +261,8 @@ Future<void> showReportSheet(BuildContext context, LiveSession s, {LiveEvent? ta
 /// Host taps a viewer's chat line: mute / remove / ban.
 Future<void> showViewerActions(BuildContext context, LiveSession s, LiveEvent e) => showModalBottomSheet(
   context: context,
-  backgroundColor: Colors.white,
-  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+  backgroundColor: UC.card,
+  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
   builder: (c) {
     void act(String cmd, {int sec = 600}) {
       s.hostAction(cmd, e, sec: sec);
@@ -289,8 +289,8 @@ Future<void> showViewerActions(BuildContext context, LiveSession s, LiveEvent e)
 Future<void> showModPanel(BuildContext context, LiveSession s) => showModalBottomSheet(
   context: context,
   isScrollControlled: true,
-  backgroundColor: Colors.white,
-  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+  backgroundColor: UC.card,
+  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
   builder: (c) => _ModPanel(s: s),
 );
 

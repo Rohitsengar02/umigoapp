@@ -10,6 +10,9 @@ import '../theme.dart';
 import 'skeleton.dart';
 import 'common.dart';
 import 'gift_icons.dart';
+import 'ui.dart';
+
+import 'dart:ui' as ui;
 
 /// The video layer: a LiveKit track when we have one, otherwise a photo.
 class LiveVideo extends StatelessWidget {
@@ -23,7 +26,7 @@ class LiveVideo extends StatelessWidget {
     final t = track;
     if (t != null) {
       return ColoredBox(
-        color: UC.ink,
+        color: UC.night,
         child: VideoTrackRenderer(t, fit: VideoViewFit.cover, mirrorMode: mirror ? VideoViewMirrorMode.mirror : VideoViewMirrorMode.off),
       );
     }
@@ -33,7 +36,7 @@ class LiveVideo extends StatelessWidget {
     }
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [UC.deep, UC.ink]),
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [UC.deep, UC.night]),
       ),
     );
   }
@@ -114,7 +117,7 @@ class ChatFeed extends StatelessWidget {
         ),
       ]);
     }
-    final gift = e.type == LiveEventType.gift;
+    final gift = e.type == LiveEventType.gift || e.type == LiveEventType.tip;
     final lvBg = e.lv > 30
         ? UC.accentText
         : e.lv > 10
@@ -127,6 +130,7 @@ class ChatFeed extends StatelessWidget {
         : const Color(0xFFFFC4E3);
     final text = switch (e.type) {
       LiveEventType.gift => 'sent ${giftById(e.giftId).name}${e.qty > 1 ? ' ×${e.qty}' : ''}',
+      LiveEventType.tip => 'tipped ${e.qty} for “${e.text}”',
       _ => e.text,
     };
     return _bubble(Colors.transparent, gift ? const Color(0x6BFF9F80) : UC.inkA(.42), [
@@ -135,7 +139,7 @@ class ChatFeed extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.only(right: 5),
           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-          decoration: BoxDecoration(color: lvBg, borderRadius: BorderRadius.circular(4)),
+          decoration: BoxDecoration(color: lvBg, borderRadius: BorderRadius.circular(99)),
           child: Text(
             'Lv ${e.lv}',
             style: ts(9.5, w: FontWeight.w800, c: Colors.white),
@@ -150,10 +154,15 @@ class ChatFeed extends StatelessWidget {
         text: text,
         style: ts(12.5, w: FontWeight.w600, c: e.masked ? Colors.white.withValues(alpha: .8) : Colors.white, h: 1.35),
       ),
-      if (gift)
+      if (e.type == LiveEventType.gift)
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
           child: Padding(padding: const EdgeInsets.only(left: 4), child: GiftIcon(e.giftId, size: 16)),
+        ),
+      if (e.type == LiveEventType.tip)
+        const WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(padding: EdgeInsets.only(left: 4), child: CoinDot(size: 14)),
         ),
     ]);
   }
@@ -162,8 +171,8 @@ class ChatFeed extends StatelessWidget {
     alignment: Alignment.centerLeft,
     child: Container(
       margin: const EdgeInsets.only(top: 5),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
       child: Text.rich(TextSpan(children: spans)),
     ),
   );
@@ -277,7 +286,7 @@ class _GiftOverlayState extends State<GiftOverlay> with TickerProviderStateMixin
     height: 52,
     padding: const EdgeInsets.only(left: 6, right: 14),
     decoration: BoxDecoration(
-      gradient: LinearGradient(colors: [UC.primary, UC.primary.withValues(alpha: 0)]),
+      gradient: LinearGradient(colors: [UC.primary, UC.accent.withValues(alpha: .85), UC.accent.withValues(alpha: 0)], stops: const [0, .6, 1]),
       borderRadius: BorderRadius.circular(99),
     ),
     child: Row(
@@ -392,13 +401,26 @@ class GlassPill extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
   final double height;
-  const GlassPill({super.key, required this.child, this.padding = const EdgeInsets.symmetric(horizontal: 10), this.height = 26});
+
+  /// true when the pill sits in an Expanded and its child should fill it.
+  final bool expand;
+  const GlassPill({super.key, required this.child, this.padding = const EdgeInsets.symmetric(horizontal: 10), this.height = 26, this.expand = false});
   @override
-  Widget build(BuildContext context) => Container(
-    height: height,
-    padding: padding,
-    decoration: BoxDecoration(color: UC.inkA(.45), borderRadius: BorderRadius.circular(99)),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [child]),
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(99),
+    child: BackdropFilter(
+      filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+      child: Container(
+        height: height,
+        padding: padding,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: .24),
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: Colors.white.withValues(alpha: .18)),
+        ),
+        child: expand ? child : Row(mainAxisSize: MainAxisSize.min, children: [child]),
+      ),
+    ),
   );
 }
 
@@ -413,13 +435,36 @@ class RoundGlassButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Tooltip(
     message: tooltip,
-    child: GestureDetector(
+    child: Pressable(
       onTap: onTap,
-      child: Container(
+      scale: .9,
+      label: tooltip,
+      child: SizedBox(
         width: size,
         height: size,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: gradient == null ? UC.inkA(.5) : null, gradient: gradient),
-        child: Icon(icon, color: color ?? Colors.white, size: size * .5),
+        child: gradient != null
+            ? AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: gradient,
+                  boxShadow: [BoxShadow(color: UC.primary.withValues(alpha: .4), blurRadius: 14, offset: const Offset(0, 4))],
+                ),
+                child: Icon(icon, color: color ?? Colors.white, size: size * .48),
+              )
+            : ClipOval(
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: .22),
+                      border: Border.all(color: Colors.white.withValues(alpha: .22)),
+                    ),
+                    child: Icon(icon, color: color ?? Colors.white, size: size * .48),
+                  ),
+                ),
+              ),
       ),
     ),
   );

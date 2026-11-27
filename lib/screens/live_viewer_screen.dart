@@ -5,7 +5,9 @@ import '../live/live_session.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/live_extras.dart';
 import '../widgets/live_widgets.dart';
+import '../data/social_data.dart' show LiveAccess;
 import '../widgets/mod_widgets.dart';
 import '../widgets/skeleton.dart';
 import 'gift_sheet.dart';
@@ -19,8 +21,23 @@ class LiveViewerScreen extends StatefulWidget {
   factory LiveViewerScreen.demo(Host h) =>
       LiveViewerScreen._(() => LiveSession.viewer(roomName: 'demo_${h.id}', hostName: h.name, demoHost: h, title: h.title), h);
 
-  factory LiveViewerScreen.real({required String room, required String hostName, String title = ''}) =>
-      LiveViewerScreen._(() => LiveSession.viewer(roomName: room, hostName: hostName, title: title), null);
+  /// [access]/[fee] come from the room list so a private live is covered at once,
+  /// before the host's full setup arrives.
+  factory LiveViewerScreen.real({required String room, required String hostName, String title = '', String access = 'public', int fee = 0}) =>
+      LiveViewerScreen._(
+        () => LiveSession.viewer(
+          roomName: room,
+          hostName: hostName,
+          title: title,
+          setup: LiveSetup(
+            access: LiveAccess.values.where((a) => a.name == access).firstOrNull ?? LiveAccess.public,
+            entryFee: fee,
+            tipsOn: false,
+            goalOn: false,
+          ),
+        ),
+        null,
+      );
 
   @override
   State<LiveViewerScreen> createState() => _LiveViewerScreenState();
@@ -57,10 +74,10 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
     final pad = MediaQuery.paddingOf(context);
     final h = widget.demoHost;
     return Scaffold(
-      backgroundColor: UC.ink,
+      backgroundColor: UC.night,
       resizeToAvoidBottomInset: true,
       body: ListenableBuilder(
-        listenable: s,
+        listenable: Listenable.merge([s, AppState.I]),
         builder: (context, _) => Stack(
           children: [
             Positioned.fill(
@@ -78,13 +95,12 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
               top: pad.top + 10,
               child: Row(
                 children: [
-                  Container(
-                    height: 42,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(color: UC.inkA(.45), borderRadius: BorderRadius.circular(99)),
+                  GlassPill(
+                    height: 50,
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
                     child: Row(
                       children: [
-                        Avatar(img: h?.img, name: s.hostName, size: 34, border: UC.primary),
+                        Avatar(img: h?.img, name: s.hostName, size: 38, border: UC.primary),
                         const SizedBox(width: 8),
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -105,11 +121,12 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                           onTap: () => setState(() => AppState.I.toggleFollow(s.hostIdentity, s.hostName)),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 160),
-                            height: 32,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            height: 38,
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: following ? Colors.white.withValues(alpha: .2) : UC.primary,
+                              color: following ? Colors.white.withValues(alpha: .2) : null,
+                              gradient: following ? null : UC.brandGradient,
                               borderRadius: BorderRadius.circular(99),
                             ),
                             child: Text(
@@ -140,13 +157,13 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  RoundGlassButton(Icons.close_rounded, tooltip: 'Leave live', size: 34, onTap: () => Navigator.pop(context)),
+                  RoundGlassButton(Icons.close_rounded, tooltip: 'Leave live', size: 42, onTap: () => Navigator.pop(context)),
                 ],
               ),
             ),
             Positioned(
               left: 10,
-              top: pad.top + 60,
+              top: pad.top + 70,
               child: Row(
                 children: [
                   GlassPill(
@@ -176,6 +193,21 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                   ),
                   const SizedBox(width: 6),
                   GuardPill(on: s.guardActive || s.demo),
+                  if (s.setup.isPrivate) ...[
+                    const SizedBox(width: 6),
+                    GlassPill(
+                      child: Row(
+                        children: [
+                          Icon(s.setup.access == LiveAccess.paid ? Icons.lock_rounded : Icons.workspace_premium_rounded, size: 13, color: UC.gold),
+                          const SizedBox(width: 4),
+                          Text(
+                            s.setup.access == LiveAccess.paid ? 'Private' : 'Subs',
+                            style: ts(11.5, w: FontWeight.w800, c: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   if (!s.demo) ...[
                     const SizedBox(width: 6),
                     GlassPill(
@@ -226,10 +258,16 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                 onTap: (e) => showReportSheet(context, s, target: e),
               ),
             ),
+            if (s.setup.goalOn)
+              Positioned(
+                left: 10,
+                top: pad.top + 108,
+                child: GestureDetector(onTap: () => showTipMenu(context, s), child: GoalBar(s)),
+              ),
             Positioned(
               left: 0,
               right: 0,
-              top: pad.top + 100,
+              top: pad.top + (s.setup.goalOn ? 180 : 100),
               child: ModNoticeBanner(notices: s.notices),
             ),
             // bottom bar
@@ -240,10 +278,10 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      height: 44,
-                      padding: const EdgeInsets.only(left: 14, right: 4),
-                      decoration: BoxDecoration(color: UC.inkA(.5), borderRadius: BorderRadius.circular(99)),
+                    child: GlassPill(
+                      expand: true,
+                      height: 48,
+                      padding: const EdgeInsets.only(left: 16, right: 5),
                       child: Row(
                         children: [
                           Expanded(
@@ -264,19 +302,16 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                               ),
                             ),
                           ),
-                          RoundGlassButton(
-                            Icons.send_rounded,
-                            tooltip: 'Send comment',
-                            size: 36,
-                            gradient: const LinearGradient(colors: [UC.primary, UC.primary]),
-                            onTap: send,
-                          ),
+                          RoundGlassButton(Icons.send_rounded, tooltip: 'Send comment', size: 38, gradient: UC.brandGradient, onTap: send),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(width: 6),
-                  RoundGlassButton(Icons.flag_rounded, tooltip: 'Report live', onTap: () => showReportSheet(context, s)),
+                  if (s.setup.tipsOn && s.setup.tips.isNotEmpty)
+                    RoundGlassButton(Icons.local_activity_rounded, tooltip: 'Tip menu', gradient: UC.coinGradient, onTap: () => showTipMenu(context, s))
+                  else
+                    RoundGlassButton(Icons.flag_rounded, tooltip: 'Report live', onTap: () => showReportSheet(context, s)),
                   const SizedBox(width: 6),
                   RoundGlassButton(
                     Icons.card_giftcard_rounded,
@@ -289,6 +324,10 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
                 ],
               ),
             ),
+            if (!canWatch(s) && s.endReason == null)
+              Positioned.fill(
+                child: PrivateGate(s: s, img: h?.img, onLeave: () => Navigator.pop(context)),
+              ),
             if (s.endReason != null) Positioned.fill(child: LiveEndedCard(text: s.endReason!)),
           ],
         ),

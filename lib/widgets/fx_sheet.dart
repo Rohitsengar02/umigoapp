@@ -41,7 +41,7 @@ class _FxSheetState extends State<FxSheet> {
           padding: EdgeInsets.fromLTRB(16, 10, 16, pad.bottom + 14),
           decoration: BoxDecoration(
             color: UC.inkA(.86),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -220,9 +220,7 @@ class _FxSheetState extends State<FxSheet> {
             child: Column(
               children: [
                 Expanded(
-                  child: st.icon == null
-                      ? const Icon(Icons.block_rounded, color: Colors.white70, size: 28)
-                      : Image.asset(st.icon!, fit: BoxFit.contain),
+                  child: st.icon == null ? const Icon(Icons.block_rounded, color: Colors.white70, size: 28) : Image.asset(st.icon!, fit: BoxFit.contain),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -251,13 +249,10 @@ class _TabChip extends StatelessWidget {
       height: small ? 30 : 34,
       padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: selected ? Colors.white : Colors.white.withValues(alpha: .1),
-        borderRadius: BorderRadius.circular(99),
-      ),
+      decoration: BoxDecoration(color: selected ? Colors.white : Colors.white.withValues(alpha: .1), borderRadius: BorderRadius.circular(99)),
       child: Text(
         label,
-        style: ts(small ? 12 : 13, w: FontWeight.w800, c: selected ? UC.ink : Colors.white),
+        style: ts(small ? 12 : 13, w: FontWeight.w800, c: selected ? UC.night : Colors.white),
       ),
     ),
   );

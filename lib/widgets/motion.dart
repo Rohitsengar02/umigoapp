@@ -32,7 +32,11 @@ class UmiTransition extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inC = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
-    final fade = CurvedAnimation(parent: animation, curve: const Interval(0, .6, curve: Curves.easeOut), reverseCurve: Curves.easeIn);
+    final fade = CurvedAnimation(
+      parent: animation,
+      curve: const Interval(0, .6, curve: Curves.easeOut),
+      reverseCurve: Curves.easeIn,
+    );
     final outC = CurvedAnimation(parent: secondary, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
     return SlideTransition(
       position: _outSlide.animate(outC),
@@ -214,7 +218,12 @@ class _StaggerInState extends State<StaggerIn> with SingleTickerProviderStateMix
   }
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
+  Widget build(BuildContext context) {
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return widget.child;
+    return _anim();
+  }
+
+  Widget _anim() => AnimatedBuilder(
     animation: _c,
     child: widget.child,
     builder: (_, child) => Opacity(

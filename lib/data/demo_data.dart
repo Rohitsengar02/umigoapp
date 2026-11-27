@@ -139,7 +139,8 @@ String fmtIn(num n) {
 }
 
 String fmtK(int n) {
-  if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
-  if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
+  String one(double v) => v >= 100 ? v.toStringAsFixed(0) : v.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '');
+  if (n >= 1000000) return '${one(n / 1000000)}M';
+  if (n >= 1000) return '${one(n / 1000)}K';
   return '$n';
 }

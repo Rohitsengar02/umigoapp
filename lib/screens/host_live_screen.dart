@@ -9,20 +9,24 @@ import '../live/live_session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/fx_sheet.dart';
+import '../widgets/live_extras.dart';
 import '../widgets/live_widgets.dart';
+import '../data/social_data.dart' show LiveAccess;
+import '../widgets/ui.dart';
 import '../widgets/mod_widgets.dart';
 
 /// The host's own live: camera, viewers, incoming chat and gifts, PK bar, earnings.
 class HostLiveScreen extends StatefulWidget {
   final String title, tag;
   final bool pk;
-  const HostLiveScreen({super.key, required this.title, required this.tag, this.pk = false});
+  final LiveSetup? setup;
+  const HostLiveScreen({super.key, required this.title, required this.tag, this.pk = false, this.setup});
   @override
   State<HostLiveScreen> createState() => _HostLiveScreenState();
 }
 
 class _HostLiveScreenState extends State<HostLiveScreen> {
-  late final LiveSession s = LiveSession.host(title: widget.title, tag: widget.tag);
+  late final LiveSession s = LiveSession.host(title: widget.title, tag: widget.tag, setup: widget.setup);
   Timer? _tick;
   final draft = TextEditingController();
   int theirs = 12920;
@@ -101,7 +105,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
         if (!did) _end();
       },
       child: Scaffold(
-        backgroundColor: UC.ink,
+        backgroundColor: UC.night,
         body: ListenableBuilder(
           listenable: Listenable.merge([s, LiveFx.I]),
           builder: (context, _) {
@@ -144,16 +148,21 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                       const SizedBox(width: 6),
                       GuardPill(on: s.guardActive || s.demo, onTap: () => showModPanel(context, s)),
                       const Spacer(),
-                      GestureDetector(
+                      Pressable(
                         onTap: _end,
+                        label: 'End live',
                         child: Container(
-                          height: 34,
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.center,
-                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(99)),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(99),
+                            boxShadow: [BoxShadow(color: UC.inkA(.25), blurRadius: 12, offset: const Offset(0, 4))],
+                          ),
                           child: Text(
-                            'End live',
-                            style: ts(13, w: FontWeight.w800, c: UC.primary),
+                            'End',
+                            style: ts(14, w: FontWeight.w800, c: UC.primary),
                           ),
                         ),
                       ),
@@ -167,9 +176,31 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.title.isEmpty ? 'My live' : widget.title,
-                        style: ts(15, w: FontWeight.w800, c: Colors.white),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              widget.title.isEmpty ? 'My live' : widget.title,
+                              overflow: TextOverflow.ellipsis,
+                              style: ts(15, w: FontWeight.w800, c: Colors.white),
+                            ),
+                          ),
+                          if (s.setup.isPrivate) ...[
+                            const SizedBox(width: 6),
+                            GlassPill(
+                              child: Row(
+                                children: [
+                                  Icon(s.setup.access == LiveAccess.paid ? Icons.lock_rounded : Icons.workspace_premium_rounded, size: 13, color: UC.gold),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    s.setup.access == LiveAccess.paid ? 'Private · ${s.setup.entryFee} coins' : 'Subscribers · ${s.setup.subPrice}/mo',
+                                    style: ts(11.5, w: FontWeight.w800, c: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -184,6 +215,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                         style: ts(11.5, w: FontWeight.w700, c: s.error != null ? UC.gold : Colors.white.withValues(alpha: .8)),
                       ),
                       if (widget.pk) ...[const SizedBox(height: 10), _pkBar(mine, pct)],
+                      if (s.setup.goalOn) ...[const SizedBox(height: 10), GoalBar(s)],
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -200,17 +232,48 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: pad.top + (widget.pk ? 270 : 220),
+                  top: pad.top + (widget.pk ? 270 : 220) + (s.setup.goalOn ? 66 : 0),
                   child: GiftOverlay(gifts: s.gifts),
                 ),
                 Positioned(
-                  right: 14,
+                  right: 70,
                   bottom: 80 + pad.bottom,
                   child: FloatingHearts(taps: s.likeTaps),
                 ),
+                // host controls as a vertical glass rail on the right
+                Positioned(
+                  right: 10,
+                  bottom: pad.bottom + 80,
+                  child: GlassPill(
+                    height: 5 * 54 + 12,
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
+                    expand: true,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        RoundGlassButton(s.micOn ? Icons.mic_rounded : Icons.mic_off_rounded, tooltip: 'Mic', size: 46, onTap: s.toggleMic),
+                        RoundGlassButton(Icons.flip_camera_ios_rounded, tooltip: 'Flip camera', size: 46, onTap: s.flipCamera),
+                        RoundGlassButton(
+                          Icons.auto_awesome_rounded,
+                          tooltip: 'Filters',
+                          size: 46,
+                          gradient: LiveFx.I.settings.any ? UC.brandGradient : null,
+                          onTap: () => showFxSheet(context),
+                        ),
+                        RoundGlassButton(Icons.shield_rounded, tooltip: 'Moderation', size: 46, color: UC.gold, onTap: () => showModPanel(context, s)),
+                        RoundGlassButton(
+                          Icons.account_balance_wallet_rounded,
+                          tooltip: 'Earnings',
+                          size: 46,
+                          onTap: () => toast(context, 'This live: ${fmtIn(s.diamondsEarned)} diamonds ≈ ₹${fmtIn(s.diamondsEarned ~/ 10)}'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 Positioned(
                   left: 10,
-                  width: 290,
+                  width: 280,
                   bottom: 80 + pad.bottom,
                   height: 240,
                   child: ChatFeed(events: s.events, onTap: (e) => showViewerActions(context, s, e)),
@@ -228,51 +291,28 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Container(
-                          height: 44,
-                          padding: const EdgeInsets.only(left: 14, right: 4),
-                          decoration: BoxDecoration(color: UC.inkA(.5), borderRadius: BorderRadius.circular(99)),
+                        child: GlassPill(
+                          expand: true,
+                          height: 50,
+                          padding: const EdgeInsets.only(left: 18, right: 5),
                           child: Row(
                             children: [
                               Expanded(
                                 child: TextField(
                                   controller: draft,
                                   onSubmitted: (_) => _say(),
-                                  style: ts(13.5, w: FontWeight.w600, c: Colors.white),
+                                  style: ts(15, w: FontWeight.w600, c: Colors.white),
                                   cursorColor: Colors.white,
                                   decoration: InputDecoration(
                                     hintText: 'Talk to your viewers…',
-                                    hintStyle: ts(13.5, w: FontWeight.w600, c: Colors.white.withValues(alpha: .75)),
+                                    hintStyle: ts(15, w: FontWeight.w500, c: Colors.white.withValues(alpha: .75)),
                                   ),
                                 ),
                               ),
-                              RoundGlassButton(
-                                Icons.send_rounded,
-                                tooltip: 'Send',
-                                size: 36,
-                                gradient: const LinearGradient(colors: [UC.primary, UC.primary]),
-                                onTap: _say,
-                              ),
+                              RoundGlassButton(Icons.send_rounded, tooltip: 'Send', size: 40, gradient: UC.brandGradient, onTap: _say),
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      RoundGlassButton(s.micOn ? Icons.mic_rounded : Icons.mic_off_rounded, tooltip: 'Mic', onTap: s.toggleMic),
-                      const SizedBox(width: 6),
-                      RoundGlassButton(Icons.flip_camera_ios_rounded, tooltip: 'Flip camera', onTap: s.flipCamera),
-                      const SizedBox(width: 6),
-                      RoundGlassButton(Icons.auto_awesome_rounded, tooltip: 'Filters', color: UC.primary, onTap: () => showFxSheet(context)),
-                      const SizedBox(width: 6),
-                      RoundGlassButton(Icons.shield_rounded, tooltip: 'Moderation', color: UC.gold, onTap: () => showModPanel(context, s)),
-                      const SizedBox(width: 6),
-                      RoundGlassButton(
-                        Icons.account_balance_wallet_rounded,
-                        tooltip: 'Earnings',
-                        gradient: const LinearGradient(colors: [UC.accent, UC.primary]),
-                        onTap: () {
-                          toast(context, 'This live: ${fmtIn(s.diamondsEarned)} diamonds ≈ ₹${fmtIn(s.diamondsEarned ~/ 10)}');
-                        },
                       ),
                     ],
                   ),
@@ -286,9 +326,9 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
     );
   }
 
-  Widget _stat(String label, String v, Widget icon) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(color: UC.inkA(.45), borderRadius: BorderRadius.circular(12)),
+  Widget _stat(String label, String v, Widget icon) => GlassPill(
+    height: 42,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [

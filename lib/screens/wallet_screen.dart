@@ -5,6 +5,7 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/motion.dart';
+import '../widgets/ui.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -12,139 +13,162 @@ class WalletScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
-    return ListenableBuilder(
-      listenable: AppState.I,
-      builder: (context, _) {
-        final st = AppState.I;
-        return ListView(
-          padding: EdgeInsets.fromLTRB(12, pad.top + 12, 12, 20),
-          children: staggerAll([
-            Text('Wallet', style: ds(24, ls: -0.8)),
-            const SizedBox(height: 12),
-            // coins card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.accent, Color(0xFFFFB79E)]),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Coin balance · for gifts',
-                    style: ts(12.5, w: FontWeight.w800, c: UC.ink.withValues(alpha: .7)),
+    return AuroraBg(
+      colors: [UC.peach, UC.lilac, UC.blush],
+      child: ListenableBuilder(
+        listenable: AppState.I,
+        builder: (context, _) {
+          final st = AppState.I;
+          return ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(16, pad.top + 64, 16, pad.bottom + 30),
+            children: staggerAll([
+              const Eyebrow('Your money'),
+              const SizedBox(height: 4),
+              const HeroTitle('Wallet', ''),
+              const SizedBox(height: 16),
+              // coins card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFFFB38F), UC.accent, Color(0xFFFFC46B)],
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const CoinDot(size: 30),
-                      const SizedBox(width: 8),
-                      Text(fmtIn(st.coins), style: ds(34, c: UC.ink, ls: -1)),
-                    ],
-                  ),
-                  Text(
-                    'Spent this week: 3,180 coins',
-                    style: ts(12.5, w: FontWeight.w700, c: UC.ink.withValues(alpha: .7)),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: _btn('Recharge', UC.ink, Colors.white, () => Navigator.pushNamed(context, '/coins'))),
-                      const SizedBox(width: 8),
-                      Expanded(child: _btn('History', Colors.white.withValues(alpha: .6), UC.ink, () => Navigator.pushNamed(context, '/transactions'))),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            // diamonds card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: UC.deep, borderRadius: BorderRadius.circular(24)),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [BoxShadow(color: UC.accent.withValues(alpha: .4), blurRadius: 30, offset: const Offset(0, 14))],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          'Diamonds · your earnings',
-                          style: ts(12.5, w: FontWeight.w800, c: Colors.white.withValues(alpha: .75)),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const DiamondIcon(size: 24),
-                            const SizedBox(width: 6),
-                            Text(fmtIn(st.diamonds), style: ds(28, c: Colors.white, ls: -1)),
-                          ],
-                        ),
-                        Text(
-                          '≈ ₹${fmtIn(st.diamonds ~/ 10)}',
-                          style: ts(13, w: FontWeight.w700, c: UC.gold),
+                        Eyebrow('Coins · for gifts', color: UC.night.withValues(alpha: .65)),
+                        const Spacer(),
+                        Icon(Icons.contactless_rounded, color: UC.night.withValues(alpha: .5)),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const CoinDot(size: 34),
+                        const SizedBox(width: 10),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: st.coins.toDouble()),
+                          duration: const Duration(milliseconds: 900),
+                          curve: Curves.easeOutCubic,
+                          builder: (_, v, _) => Text(fmtIn(v.round()), style: ds(42, c: UC.night)),
                         ),
                       ],
                     ),
-                  ),
-                  _btn('Withdraw', Colors.white, UC.deep, () => Navigator.pushNamed(context, '/withdraw'), w: 124),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      'Spent this week: 3,180 coins',
+                      style: ts(13.5, w: FontWeight.w600, c: UC.night.withValues(alpha: .7)),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: _btn('Recharge', UC.pill, Colors.white, Icons.add_rounded, () => Navigator.pushNamed(context, '/coins'))),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _btn(
+                            'History',
+                            Colors.white.withValues(alpha: .55),
+                            UC.night,
+                            Icons.receipt_long_rounded,
+                            () => Navigator.pushNamed(context, '/transactions'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Text('Daily check-in', style: ts(16, w: FontWeight.w800)),
-                const Spacer(),
-                Text(
-                  'Day 4 streak',
-                  style: ts(12.5, w: FontWeight.w800, c: UC.accentText),
+              const SizedBox(height: 12),
+              // diamonds card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.deep, UC.violet]),
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [BoxShadow(color: UC.deep.withValues(alpha: .35), blurRadius: 30, offset: const Offset(0, 14))],
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                for (var i = 0; i < 7; i++) Expanded(child: _day(i + 1, [5, 5, 10, 10, 20, 20, 50][i], st)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Text('Recent', style: ts(16, w: FontWeight.w800)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, '/transactions'),
-                  child: Text(
-                    'See all',
-                    style: ts(13, w: FontWeight.w800, c: UC.deep),
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Eyebrow('Diamonds · earnings', color: Colors.white.withValues(alpha: .7)),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const DiamondIcon(size: 26),
+                              const SizedBox(width: 8),
+                              Text(fmtIn(st.diamonds), style: ds(32, c: Colors.white)),
+                            ],
+                          ),
+                          Text(
+                            '≈ ₹${fmtIn(st.diamonds ~/ 10)}',
+                            style: ts(14, w: FontWeight.w700, c: UC.gold),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 128, child: _btn('Withdraw', Colors.white, UC.deep, Icons.south_rounded, () => Navigator.pushNamed(context, '/withdraw'))),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            for (final t in demoTx.take(4)) txRow(t),
-          ]),
-        );
-      },
+              ),
+              const SizedBox(height: 22),
+              SectionHead(
+                'Daily check-in',
+                sub: 'Come back every day for more coins',
+                trailing: Text(
+                  'Day 4',
+                  style: ts(14, w: FontWeight.w800, c: UC.accentText),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SoftCard(
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    for (var i = 0; i < 7; i++) Expanded(child: _day(i + 1, [5, 5, 10, 10, 20, 20, 50][i], st)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              SectionHead('Recent', action: 'See all', onAction: () => Navigator.pushNamed(context, '/transactions')),
+              const SizedBox(height: 12),
+              SoftCard(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(children: [for (final t in demoTx.take(4)) txRow(t)]),
+              ),
+            ]),
+          );
+        },
+      ),
     );
   }
 
-  Widget _btn(String l, Color bg, Color fg, VoidCallback onTap, {double? w}) => SizedBox(
-    width: w,
-    height: 42,
-    child: FilledButton(
-      onPressed: onTap,
-      style: FilledButton.styleFrom(
-        backgroundColor: bg,
-        foregroundColor: fg,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-      child: Text(
-        l,
-        style: ts(14, w: FontWeight.w800, c: fg),
+  Widget _btn(String l, Color bg, Color fg, IconData icon, VoidCallback onTap) => Pressable(
+    onTap: onTap,
+    label: l,
+    child: Container(
+      height: 46,
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18, color: fg),
+          const SizedBox(width: 6),
+          Text(
+            l,
+            style: ts(14.5, w: FontWeight.w800, c: fg),
+          ),
+        ],
       ),
     ),
   );
@@ -152,48 +176,41 @@ class WalletScreen extends StatelessWidget {
   Widget _day(int d, int amt, AppState st) {
     final past = d < 4 || (d == 4 && st.checkedInToday);
     final today = d == 4 && !st.checkedInToday;
-    return GestureDetector(
+    final fg = today
+        ? Colors.white
+        : past
+        ? UC.accentText
+        : UC.muted;
+    return Pressable(
       onTap: today ? st.checkIn : null,
-      child: Container(
-        height: 74,
+      label: 'Day $d, $amt coins',
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        height: 84,
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
+          gradient: today ? UC.brandGradient : null,
           color: today
-              ? UC.accent
+              ? null
               : past
               ? UC.accentSoft
-              : UC.surface,
-          borderRadius: BorderRadius.circular(14),
+              : UC.ink.withValues(alpha: .04),
+          borderRadius: BorderRadius.circular(99),
+          boxShadow: today ? [BoxShadow(color: UC.primary.withValues(alpha: .35), blurRadius: 12, offset: const Offset(0, 5))] : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Day $d',
-              style: ts(
-                10,
-                w: FontWeight.w800,
-                c: today
-                    ? UC.ink
-                    : past
-                    ? UC.accentText
-                    : UC.muted,
-              ),
+              'D$d',
+              style: ts(11, w: FontWeight.w800, c: fg),
             ),
-            const SizedBox(height: 4),
-            past ? const Icon(Icons.check_circle_rounded, size: 20, color: UC.accentText) : const CoinDot(size: 20),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
+            past ? Icon(Icons.check_circle_rounded, size: 20, color: UC.accentText) : const CoinDot(size: 20),
+            const SizedBox(height: 6),
             Text(
               '+$amt',
-              style: ts(
-                11,
-                w: FontWeight.w800,
-                c: today
-                    ? UC.ink
-                    : past
-                    ? UC.accentText
-                    : UC.muted,
-              ),
+              style: ts(11.5, w: FontWeight.w800, c: fg),
             ),
           ],
         ),
@@ -211,20 +228,14 @@ Widget txRow(Tx t) {
     _ => ('FREE', UC.accentSoft, UC.accentText, UC.greenText),
   };
   return Container(
-    margin: const EdgeInsets.only(bottom: 4),
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: UC.line),
-    ),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
     child: Row(
       children: [
         Container(
-          width: 42,
-          height: 42,
+          width: 44,
+          height: 44,
           alignment: Alignment.center,
-          decoration: BoxDecoration(color: k.$2, borderRadius: BorderRadius.circular(13)),
+          decoration: BoxDecoration(color: k.$2, shape: BoxShape.circle),
           child: Text(
             k.$1,
             style: ts(10, w: FontWeight.w800, c: k.$3),

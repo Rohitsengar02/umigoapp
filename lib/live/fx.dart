@@ -12,16 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class FxSettings {
   final double smooth, whiten, slim, eyes, lips, blush;
   final String look, sticker;
-  const FxSettings({
-    this.smooth = 0,
-    this.whiten = 0,
-    this.slim = 0,
-    this.eyes = 0,
-    this.lips = 0,
-    this.blush = 0,
-    this.look = 'none',
-    this.sticker = 'none',
-  });
+  const FxSettings({this.smooth = 0, this.whiten = 0, this.slim = 0, this.eyes = 0, this.lips = 0, this.blush = 0, this.look = 'none', this.sticker = 'none'});
 
   static const natural = FxSettings(smooth: .55, whiten: .3, slim: .25, eyes: .15);
   static const glam = FxSettings(smooth: .75, whiten: .45, slim: .4, eyes: .3, lips: .55, blush: .45);
