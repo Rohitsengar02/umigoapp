@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -176,6 +177,11 @@ class LiveSession extends ChangeNotifier {
   int _vgHits = 0, _vgClean = 0, _vgStrikes = 0;
 
   Timer? _bot;
+
+  // Home thumbnail: the host's phone posts a small camera snapshot now and then.
+  Timer? _thumb;
+  String? _token;
+  bool _thumbBusy = false;
   final _rnd = Random();
   DateTime startedAt = DateTime.now();
 
@@ -261,6 +267,7 @@ class LiveSession extends ChangeNotifier {
       });
 
     await r.connect(grant.url, grant.token);
+    _token = grant.token;
     myIdentity = r.localParticipant?.identity ?? myIdentity; // the server may normalise it
     if (r.remoteParticipants.values.any((p) => p.identity == guardIdentity)) _setGuard(true);
     if (isHost) {
@@ -272,6 +279,8 @@ class LiveSession extends ChangeNotifier {
       }
       localVideo = r.localParticipant?.videoTrackPublications.firstOrNull?.track;
       LiveFx.I.attach(localVideo); // beauty, looks and AR run on the camera before it is sent
+      Timer(const Duration(seconds: 4), _postThumb);
+      _thumb = Timer.periodic(const Duration(seconds: 30), (_) => _postThumb());
     } else {
       for (final p in r.remoteParticipants.values) {
         if (p.identity == guardIdentity) continue;
@@ -745,6 +754,27 @@ class LiveSession extends ChangeNotifier {
     }
   }
 
+  // ---------------- Home thumbnail ----------------
+  /// Sends a 360px-wide snapshot of the camera to the token server for the Home
+  /// feed. Skipped while the camera is off or the video check flagged a frame.
+  Future<void> _postThumb() async {
+    final track = localVideo, token = _token;
+    if (_thumbBusy || ended || track == null || token == null || track.muted || videoBlocked || _viewersBlurred || _vgHits > 0) return;
+    _thumbBusy = true;
+    try {
+      final png = await track.mediaStreamTrack.captureFrame();
+      final codec = await ui.instantiateImageCodec(png.asUint8List(), targetWidth: 360);
+      final frame = await codec.getNextFrame();
+      final data = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+      frame.image.dispose();
+      if (data != null && !ended) await TokenApi.uploadThumb(token, data.buffer.asUint8List());
+    } catch (_) {
+      // no frame yet, or the server is waking up; the next tick tries again
+    } finally {
+      _thumbBusy = false;
+    }
+  }
+
   // ---------------- on-phone video check ----------------
   static bool unsafeScores(Map<String, double> s) => (s['Porn'] ?? 0) + (s['Hentai'] ?? 0) >= .7 || (s['Sexy'] ?? 0) >= .92;
 
@@ -850,6 +880,7 @@ class LiveSession extends ChangeNotifier {
   Future<void> end() async {
     _bot?.cancel();
     _vg?.cancel();
+    _thumb?.cancel();
     if (isHost) LiveFx.I.detach();
     await _listener?.dispose();
     try {
