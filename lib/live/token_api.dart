@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -17,6 +18,12 @@ class LiveRoomInfo {
   final int fee;
   final int viewers;
   final int startedAt; // ms since epoch, 0 if unknown
+
+  /// Thumbnail: a snapshot of the host's camera (URL) or, for demo lives, a photo asset.
+  final String? img;
+
+  /// Set for demo lives: the creator id whose demo live opens on tap.
+  final String? demoId;
   LiveRoomInfo({
     required this.name,
     required this.title,
@@ -27,6 +34,8 @@ class LiveRoomInfo {
     this.startedAt = 0,
     this.access = 'public',
     this.fee = 0,
+    this.img,
+    this.demoId,
   });
 
   bool get isPrivate => access != 'public';
@@ -86,8 +95,17 @@ class TokenApi {
         startedAt: (m['startedAt'] ?? 0) as int,
         access: '${m['access'] ?? 'public'}',
         fee: (m['fee'] ?? 0) as int,
+        img: (m['thumb'] ?? 0) as int > 0 ? '$_base/thumb/${Uri.encodeComponent('${m['name']}')}?v=${m['thumb']}' : null,
       );
     }).toList();
+  }
+
+  /// The host posts a small snapshot of their camera so the Home feed can show it.
+  /// [token] is the host's LiveKit token; the server checks it before storing.
+  static Future<void> uploadThumb(String token, Uint8List png) async {
+    await http
+        .post(Uri.parse('$_base/thumb'), headers: {'content-type': 'image/png', 'authorization': 'Bearer $token'}, body: png)
+        .timeout(const Duration(seconds: 30));
   }
 
   static Future<bool> health() async {

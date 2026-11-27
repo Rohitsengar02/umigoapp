@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../state/app_state.dart';
+import '../data/demo_lives.dart';
 import 'token_api.dart';
 
 /// Real lives on your LiveKit server, refreshed every few seconds while any
@@ -22,6 +23,9 @@ class RoomsFeed extends ChangeNotifier {
 
   /// Lives other than my own.
   List<LiveRoomInfo> get others => rooms.where((r) => r.hostId != AppState.I.userId).toList();
+
+  /// Real lives first, then the demo lives (until the backend has real creators).
+  List<LiveRoomInfo> get withDemo => [...others, ...demoLives];
 
   void attach() {
     _users++;
