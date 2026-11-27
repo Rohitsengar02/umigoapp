@@ -22,9 +22,12 @@ const _tabs = [
   (Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, 'Chat'),
 ];
 
-class _ShellState extends State<Shell> {
+class _ShellState extends State<Shell> with SingleTickerProviderStateMixin {
   int tab = 0;
   final _seen = <int>{0}; // build a tab the first time it is opened, then keep it alive
+  late final AnimationController _in = AnimationController(vsync: this, duration: const Duration(milliseconds: 320), value: 1);
+  late final Animation<double> _fade = CurvedAnimation(parent: _in, curve: Curves.easeOut);
+  late final Animation<Offset> _slide = Tween(begin: const Offset(0, .015), end: Offset.zero).animate(CurvedAnimation(parent: _in, curve: Curves.easeOutCubic));
 
   void _go(int i) {
     if (i == tab) return;
@@ -33,6 +36,13 @@ class _ShellState extends State<Shell> {
       tab = i;
       _seen.add(i);
     });
+    _in.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _in.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,23 +54,18 @@ class _ShellState extends State<Shell> {
       extendBody: true,
       body: Stack(
         children: [
+          // Inactive tabs are fully offstage (kept alive, no paint, no ticks); only the
+          // tab being opened fades in. A frozen fade used to leave one tab drawn on top.
           for (var i = 0; i < pages.length; i++)
             if (_seen.contains(i))
               Positioned.fill(
-                child: IgnorePointer(
-                  ignoring: i != tab,
+                child: Offstage(
+                  offstage: i != tab,
                   child: TickerMode(
                     enabled: i == tab,
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOut,
-                      opacity: i == tab ? 1 : 0,
-                      child: AnimatedSlide(
-                        duration: const Duration(milliseconds: 320),
-                        curve: Curves.easeOutCubic,
-                        offset: i == tab ? Offset.zero : const Offset(0, .015),
-                        child: pages[i],
-                      ),
+                    child: FadeTransition(
+                      opacity: i == tab ? _fade : kAlwaysCompleteAnimation,
+                      child: SlideTransition(position: i == tab ? _slide : const AlwaysStoppedAnimation(Offset.zero), child: pages[i]),
                     ),
                   ),
                 ),
@@ -87,7 +92,7 @@ class _TabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const h = 68.0;
-    final tint = dark ? const Color(0x8C2E1C30) : const Color(0xC7FFFFFF);
+    final tint = dark ? const Color(0x8C2E1C30) : UC.glassStrong;
     final idle = dark ? Colors.white.withValues(alpha: .8) : UC.ink;
     return Row(
       children: [
@@ -111,7 +116,7 @@ class _TabBar extends StatelessWidget {
                         height: h - 18,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: dark ? Colors.white : UC.ink,
+                            color: dark ? Colors.white : UC.pill,
                             borderRadius: BorderRadius.circular(99),
                             boxShadow: [BoxShadow(color: UC.inkA(.30), blurRadius: 16, offset: const Offset(0, 6))],
                           ),
@@ -140,7 +145,7 @@ class _TabBar extends StatelessWidget {
                                           child: Icon(
                                             i == index ? _tabs[i].$1 : _tabs[i].$2,
                                             size: 26,
-                                            color: i == index ? (dark ? UC.ink : Colors.white) : idle,
+                                            color: i == index ? (dark ? UC.night : Colors.white) : idle,
                                           ),
                                         ),
                                       ),

@@ -149,7 +149,7 @@ void showTipMenu(BuildContext context, LiveSession s) {
                     child: Container(
                       height: 40,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(color: UC.ink, borderRadius: BorderRadius.circular(99)),
+                      decoration: BoxDecoration(color: UC.pill, borderRadius: BorderRadius.circular(99)),
                       child: Row(
                         children: [
                           const CoinDot(size: 15),

@@ -123,7 +123,7 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
     return Scaffold(
-      backgroundColor: UC.ink,
+      backgroundColor: UC.night,
       body: Stack(
         children: [
           Positioned.fill(
@@ -299,7 +299,7 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
     final maxH = MediaQuery.sizeOf(context).height * .56;
     return Glass(
       radius: BorderRadius.circular(34),
-      tint: const Color(0xEBFFFFFF),
+      tint: UC.glassStrong,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -389,7 +389,7 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(color: UC.ink.withValues(alpha: .06), shape: BoxShape.circle),
-                    child: const Icon(Icons.arrow_back_rounded, color: UC.ink),
+                    child: Icon(Icons.arrow_back_rounded, color: UC.ink),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -433,7 +433,7 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
     height: 52,
     padding: const EdgeInsets.symmetric(horizontal: 16),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: UC.card,
       borderRadius: BorderRadius.circular(18),
       boxShadow: [BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .08), blurRadius: 14, offset: const Offset(0, 5))],
     ),
@@ -477,7 +477,7 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
   Widget _toggle(IconData icon, String title, String sub, bool v, ValueChanged<bool> on) => Container(
     margin: const EdgeInsets.only(bottom: 8),
     padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+    decoration: BoxDecoration(color: UC.card, borderRadius: BorderRadius.circular(18)),
     child: Row(
       children: [
         Container(
@@ -542,7 +542,7 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: UC.card,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: setup.access == a.$1 ? UC.primary : Colors.white, width: 1.8),
               boxShadow: [
@@ -620,7 +620,7 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
                   tooltip: 'Remove',
                   visualDensity: VisualDensity.compact,
                   onPressed: () => setState(() => setup.tips.removeAt(i)),
-                  icon: const Icon(Icons.close_rounded, size: 18, color: UC.muted),
+                  icon: Icon(Icons.close_rounded, size: 18, color: UC.muted),
                 ),
               ],
             ),
@@ -641,7 +641,7 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
               child: Container(
                 height: 52,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(color: UC.ink, borderRadius: BorderRadius.circular(18)),
+                decoration: BoxDecoration(color: UC.pill, borderRadius: BorderRadius.circular(18)),
                 child: Row(
                   children: [
                     const CoinDot(size: 15),
@@ -716,7 +716,7 @@ class _GoLiveScreenState extends State<GoLiveScreen> {
 
   Widget _sum(IconData i, String t) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(99)),
+    decoration: BoxDecoration(color: UC.card, borderRadius: BorderRadius.circular(99)),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [

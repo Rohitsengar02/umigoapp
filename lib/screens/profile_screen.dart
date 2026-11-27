@@ -86,7 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               color: UC.ink,
                               borderRadius: BorderRadius.circular(99),
-                              border: Border.all(color: Colors.white, width: 2),
+                              border: Border.all(color: UC.card, width: 2),
                             ),
                             child: Text(
                               'Lv ${st.level}',
@@ -114,7 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                              decoration: BoxDecoration(color: UC.ink, borderRadius: BorderRadius.circular(99)),
+                              decoration: BoxDecoration(color: UC.pill, borderRadius: BorderRadius.circular(99)),
                               child: Text(
                                 'VIP 2',
                                 style: ts(11.5, w: FontWeight.w800, c: UC.gold),
@@ -163,6 +163,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       decoration: softBox(26),
                       child: Column(
                         children: [
+                          const ThemeRow(),
+                          const Divider(height: 1, indent: 70),
                           SwitchListTile.adaptive(
                             value: st.privateAccount,
                             onChanged: (v) => st.updateProfile(privateAccount: v),
@@ -252,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.all(40),
                     child: Column(
                       children: [
-                        const Icon(Icons.bookmark_border_rounded, size: 40, color: UC.muted),
+                        Icon(Icons.bookmark_border_rounded, size: 40, color: UC.muted),
                         const SizedBox(height: 8),
                         Text(
                           'Reels you save show up here',
@@ -287,7 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _tag(String t) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(99)),
+    decoration: BoxDecoration(color: UC.card, borderRadius: BorderRadius.circular(99)),
     child: Text(
       '#$t',
       style: ts(12.5, w: FontWeight.w700, c: UC.deep),
@@ -309,7 +311,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       meta,
       style: ts(12.5, w: FontWeight.w500, c: UC.muted),
     ),
-    trailing: const Icon(Icons.chevron_right_rounded, color: UC.muted),
+    trailing: Icon(Icons.chevron_right_rounded, color: UC.muted),
   );
 
   Widget _money(String l, String v, Widget icon, Color tint, VoidCallback onTap) => SoftCard(
@@ -527,6 +529,8 @@ class SettingsScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                   child: Column(
                     children: staggerAll([
+                      SoftCard(padding: EdgeInsets.zero, child: const ThemeRow()),
+                      const SizedBox(height: 12),
                       SoftCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -689,6 +693,41 @@ class SettingsScreen extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/// Light / dark choice. Saved on the phone and applied to every screen at once.
+class ThemeRow extends StatelessWidget {
+  const ThemeRow({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final dark = AppState.I.darkMode;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: UC.violet.withValues(alpha: .14), borderRadius: BorderRadius.circular(13)),
+            child: Icon(dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: dark ? UC.gold : UC.violet, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text('Theme', style: ts(14.5, w: FontWeight.w800)),
+          ),
+          SizedBox(
+            width: 150,
+            child: SlideSegmented(
+              items: const ['Light', 'Dark'],
+              value: dark ? 'Dark' : 'Light',
+              height: 38,
+              onChanged: (v) => AppState.I.setDarkMode(v == 'Dark'),
+            ),
+          ),
+        ],
       ),
     );
   }

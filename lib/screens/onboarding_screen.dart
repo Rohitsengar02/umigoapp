@@ -295,7 +295,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
             height: s * .58,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white,
+              color: UC.card,
               boxShadow: [BoxShadow(color: UC.accent.withValues(alpha: .35), blurRadius: 50, offset: const Offset(0, 20))],
             ),
             alignment: Alignment.center,
@@ -313,7 +313,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: UC.card,
                     shape: BoxShape.circle,
                     boxShadow: [BoxShadow(color: UC.inkA(.10), blurRadius: 16, offset: const Offset(0, 6))],
                   ),

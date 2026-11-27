@@ -98,7 +98,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           gradient: c.live ? const SweepGradient(colors: [UC.primary, UC.accent, UC.gold, UC.primary]) : null,
-                                          color: c.live ? null : Colors.white,
+                                          color: c.live ? null : UC.card,
                                         ),
                                         child: Avatar(img: c.img, size: 58, border: Colors.white),
                                       ),
@@ -111,7 +111,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                           decoration: BoxDecoration(
                                             color: UC.green,
                                             shape: BoxShape.circle,
-                                            border: Border.all(color: Colors.white, width: 2.5),
+                                            border: Border.all(color: UC.card, width: 2.5),
                                           ),
                                         ),
                                       ),
@@ -177,7 +177,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                             width: 42,
                             height: 42,
                             decoration: BoxDecoration(color: UC.accentSoft, borderRadius: BorderRadius.circular(14)),
-                            child: const Icon(Icons.payments_rounded, color: UC.accentText),
+                            child: Icon(Icons.payments_rounded, color: UC.accentText),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -265,7 +265,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.lock_rounded, size: 11, color: UC.accentText),
+                        Icon(Icons.lock_rounded, size: 11, color: UC.accentText),
                         const SizedBox(width: 3),
                         Text(
                           '${c.chatPrice}',

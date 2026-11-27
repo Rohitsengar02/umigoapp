@@ -35,7 +35,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.deep, UC.ink]),
+                      gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.deep, UC.violet]),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: Column(

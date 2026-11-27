@@ -252,7 +252,7 @@ class _TabChip extends StatelessWidget {
       decoration: BoxDecoration(color: selected ? Colors.white : Colors.white.withValues(alpha: .1), borderRadius: BorderRadius.circular(99)),
       child: Text(
         label,
-        style: ts(small ? 12 : 13, w: FontWeight.w800, c: selected ? UC.ink : Colors.white),
+        style: ts(small ? 12 : 13, w: FontWeight.w800, c: selected ? UC.night : Colors.white),
       ),
     ),
   );

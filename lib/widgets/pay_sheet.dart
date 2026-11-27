@@ -30,7 +30,7 @@ Future<bool> showPaySheet(
       return Container(
         margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
         padding: EdgeInsets.fromLTRB(20, 12, 20, 18 + pad),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(34)),
+        decoration: BoxDecoration(color: UC.card, borderRadius: BorderRadius.circular(34)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -61,7 +61,7 @@ Future<bool> showPaySheet(
                       decoration: BoxDecoration(
                         gradient: UC.brandGradient,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2.5),
+                        border: Border.all(color: UC.card, width: 2.5),
                       ),
                       child: Icon(icon, color: Colors.white, size: 16),
                     ),
@@ -86,8 +86,8 @@ Future<bool> showPaySheet(
                       Container(
                         width: 22,
                         height: 22,
-                        decoration: const BoxDecoration(color: UC.greenSoft, shape: BoxShape.circle),
-                        child: const Icon(Icons.check_rounded, size: 15, color: UC.greenText),
+                        decoration: BoxDecoration(color: UC.greenSoft, shape: BoxShape.circle),
+                        child: Icon(Icons.check_rounded, size: 15, color: UC.greenText),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -165,7 +165,7 @@ Future<T?> showUmiSheet<T>(BuildContext context, Widget Function(BuildContext) c
     margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
     padding: EdgeInsets.fromLTRB(18, 12, 18, 14 + MediaQuery.paddingOf(ctx).bottom),
     constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * .82),
-    decoration: BoxDecoration(color: dark ? const Color(0xF21E1420) : Colors.white, borderRadius: BorderRadius.circular(32)),
+    decoration: BoxDecoration(color: dark ? const Color(0xF21E1420) : UC.card, borderRadius: BorderRadius.circular(32)),
     child: Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,

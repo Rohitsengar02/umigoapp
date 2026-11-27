@@ -162,11 +162,11 @@ class FeatureLiveCard extends StatelessWidget {
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(99)),
                       child: Row(
                         children: [
-                          const Icon(Icons.play_arrow_rounded, color: UC.ink, size: 22),
+                          const Icon(Icons.play_arrow_rounded, color: UC.night, size: 22),
                           const SizedBox(width: 4),
                           Text(
                             'Watch',
-                            style: ts(15, w: FontWeight.w800, c: UC.ink),
+                            style: ts(15, w: FontWeight.w800, c: UC.night),
                           ),
                         ],
                       ),
@@ -292,7 +292,7 @@ class NoLives extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [UC.blush, UC.peach], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              gradient: LinearGradient(colors: [UC.blush, UC.peach], begin: Alignment.topLeft, end: Alignment.bottomRight),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 3),
             ),

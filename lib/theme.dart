@@ -2,35 +2,54 @@ import 'package:material_ui/material_ui.dart';
 
 import 'widgets/motion.dart';
 
-/// Umigo "Rose Plum" palette (palette A from the approved design board).
+/// Umigo brand palette from the client (24 Nov 2026): rose pink, warm coral peach,
+/// muted plum and deep violet purple, on white (light) or near-black plum (dark).
+/// Brand colours are constant; neutrals are getters that follow [UC.dark].
 class UC {
-  static const primary = Color(0xFFCF3F6C); // rose pink: actions, LIVE
-  static const soft = Color(0xFFFDEAF0);
-  static const deep = Color(0xFF6B4A6E); // muted plum: chips, links, overlays
-  static const accent = Color(0xFFFF9F80); // coral peach: coins, gifts
-  static const accentSoft = Color(0xFFFFF0EA);
-  static const accentText = Color(0xFFA84A2C);
-  static const ink = Color(0xFF2E1C30);
-  static const muted = Color(0xFF74647A);
-  static const line = Color(0xFFF1E4EA);
-  static const surface = Color(0xFFFBF4F6);
+  static bool dark = false;
+  static T _m<T>(T light, T night) => dark ? night : light;
+
+  // brand (same in both themes)
+  static const primary = Color(0xFFD6456B); // rose pink: actions, LIVE
+  static const accent = Color(0xFFF4946C); // warm coral peach: coins, gifts
+  static const deep = Color(0xFF963D7D); // muted plum: chips, links, overlays
+  static const violet = Color(0xFF581D64); // deep violet purple: strong surfaces
   static const gold = Color(0xFFFFC46B);
   static const green = Color(0xFF12B76A);
-  static const greenText = Color(0xFF067647);
-  static const greenSoft = Color(0xFFE7F8EF);
   static const red = Color(0xFFF04438);
 
-  // Soft backdrop for the glass look: a near-white base with pastel light behind it.
-  static const bg = Color(0xFFFCF8FA);
-  static const lilac = Color(0xFFEDE1F8);
-  static const blush = Color(0xFFFFDCE7);
-  static const peach = Color(0xFFFFE6D8);
-  static const mint = Color(0xFFE3F6EC);
+  /// Filled "dark" controls (selected chips, Continue buttons, tab highlight).
+  static const pill = violet;
 
-  static Color inkA(double o) => ink.withValues(alpha: o);
+  /// Always-dark base for camera screens and photo overlays.
+  static const night = Color(0xFF1B0C1F);
+
+  // neutrals that follow the theme
+  static Color get ink => _m(const Color(0xFF2A1430), const Color(0xFFF7EEF8));
+  static Color get muted => _m(const Color(0xFF7A6580), const Color(0xFFB9A6BE));
+  static Color get line => _m(const Color(0xFFF2E3EB), const Color(0xFF34223A));
+  static Color get surface => _m(const Color(0xFFFBF3F6), const Color(0xFF27182C));
+  static Color get card => _m(Colors.white, const Color(0xFF1F1224));
+  static Color get glassStrong => _m(const Color(0xE6FFFFFF), const Color(0xE6221426));
+  static Color get glass => _m(const Color(0xB8FFFFFF), const Color(0xB0251628));
+  static Color get soft => _m(const Color(0xFFFDE8EE), const Color(0xFF3B1627));
+  static Color get accentSoft => _m(const Color(0xFFFFEFE7), const Color(0xFF3A2017));
+  static Color get accentText => _m(const Color(0xFFA5482A), const Color(0xFFFFB79A));
+  static Color get greenText => _m(const Color(0xFF067647), const Color(0xFF5BE3A0));
+  static Color get greenSoft => _m(const Color(0xFFE7F8EF), const Color(0xFF123222));
+
+  // soft backdrop: near-white (or near-black) base with brand-tinted light behind it
+  static Color get bg => _m(const Color(0xFFFDF8FA), const Color(0xFF120914));
+  static Color get lilac => _m(const Color(0xFFEFDDF3), const Color(0xFF3A1546));
+  static Color get blush => _m(const Color(0xFFFFDDE6), const Color(0xFF4A1430));
+  static Color get peach => _m(const Color(0xFFFFE5D9), const Color(0xFF3E1E14));
+  static Color get mint => _m(const Color(0xFFE3F6EC), const Color(0xFF10261C));
+
+  static Color inkA(double o) => night.withValues(alpha: o);
 
   static const coinGradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [gold, accent]);
   static const brandGradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [primary, accent]);
+  static const violetGradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [deep, violet]);
 }
 
 const kFont = 'Jakarta';
@@ -46,8 +65,15 @@ TextStyle ds(double size, {FontWeight w = FontWeight.w800, Color? c, double? ls,
 ThemeData buildTheme() {
   final base = ThemeData(
     useMaterial3: true,
+    brightness: UC.dark ? Brightness.dark : Brightness.light,
     fontFamily: kFont,
-    colorScheme: ColorScheme.fromSeed(seedColor: UC.primary, primary: UC.primary, surface: Colors.white),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: UC.primary,
+      brightness: UC.dark ? Brightness.dark : Brightness.light,
+      primary: UC.primary,
+      surface: UC.card,
+      onSurface: UC.ink,
+    ),
     scaffoldBackgroundColor: UC.bg,
     splashFactory: InkSparkle.splashFactory,
     pageTransitionsTheme: const PageTransitionsTheme(
@@ -64,14 +90,17 @@ ThemeData buildTheme() {
   return base.copyWith(
     textTheme: base.textTheme.apply(bodyColor: UC.ink, displayColor: UC.ink, fontFamily: kFont),
     inputDecorationTheme: const InputDecorationTheme(border: InputBorder.none, isDense: true),
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: Colors.white,
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: UC.card,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
     ),
-    dividerTheme: const DividerThemeData(color: UC.line, thickness: 1),
+    dividerTheme: DividerThemeData(color: UC.line, thickness: 1),
+    listTileTheme: ListTileThemeData(textColor: UC.ink, iconColor: UC.ink),
+    drawerTheme: DrawerThemeData(backgroundColor: UC.bg),
+    dialogTheme: DialogThemeData(backgroundColor: UC.card),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: UC.ink,
+      backgroundColor: UC.pill,
       behavior: SnackBarBehavior.floating,
       contentTextStyle: ts(13.5, c: Colors.white),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),

@@ -576,7 +576,7 @@ class _ReelPageState extends State<_ReelPage> with TickerProviderStateMixin {
         ),
         Column(
           children: [
-            const Icon(Icons.favorite_border_rounded, size: 18, color: UC.muted),
+            Icon(Icons.favorite_border_rounded, size: 18, color: UC.muted),
             if (likes > 0)
               Text(
                 '$likes',
@@ -705,7 +705,7 @@ class _ReelPageState extends State<_ReelPage> with TickerProviderStateMixin {
                   Container(
                     width: 56,
                     height: 56,
-                    decoration: const BoxDecoration(color: UC.surface, shape: BoxShape.circle),
+                    decoration: BoxDecoration(color: UC.surface, shape: BoxShape.circle),
                     child: Icon(a.$1, color: UC.ink),
                   ),
                   a.$2,

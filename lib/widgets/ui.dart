@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -16,16 +17,16 @@ bool reduceMotion(BuildContext context) => MediaQuery.maybeDisableAnimationsOf(c
 /// Near-white page with soft pastel light in the corners (cheap radial gradients, no blur).
 class AuroraBg extends StatelessWidget {
   final Widget child;
-  final List<Color> colors;
-  const AuroraBg({super.key, required this.child, this.colors = const [UC.blush, UC.lilac, UC.peach]});
+  final List<Color>? colors;
+  const AuroraBg({super.key, required this.child, this.colors});
   @override
   Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(color: UC.bg),
+    decoration: BoxDecoration(color: UC.bg),
     child: Stack(
       children: [
         Positioned.fill(
           child: IgnorePointer(
-            child: RepaintBoundary(child: CustomPaint(painter: _AuroraPainter(colors))),
+            child: RepaintBoundary(child: CustomPaint(painter: _AuroraPainter(colors ?? [UC.blush, UC.lilac, UC.peach]))),
           ),
         ),
         child,
@@ -61,7 +62,7 @@ class _AuroraPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_AuroraPainter o) => o.c != c;
+  bool shouldRepaint(_AuroraPainter o) => !listEquals(o.c, c);
 }
 
 /// Frosted glass. Use it for things that float above content (bars, overlay buttons), not for cards.
@@ -70,7 +71,7 @@ class Glass extends StatelessWidget {
   final BorderRadius radius;
   final EdgeInsetsGeometry? padding;
   final double blur;
-  final Color tint;
+  final Color? tint;
   final bool shadow;
   const Glass({
     super.key,
@@ -78,7 +79,7 @@ class Glass extends StatelessWidget {
     this.radius = const BorderRadius.all(Radius.circular(99)),
     this.padding,
     this.blur = 22,
-    this.tint = const Color(0xB8FFFFFF),
+    this.tint,
     this.shadow = true,
   });
   @override
@@ -94,9 +95,9 @@ class Glass extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: tint,
+            color: tint ?? UC.glass,
             borderRadius: radius,
-            border: Border.all(color: Colors.white.withValues(alpha: .7), width: 1),
+            border: Border.all(color: Colors.white.withValues(alpha: UC.dark ? .08 : .7), width: 1),
           ),
           foregroundDecoration: BoxDecoration(
             borderRadius: radius,
@@ -186,9 +187,9 @@ class Eyebrow extends StatelessWidget {
 class HeroTitle extends StatelessWidget {
   final String lead, accent, tail;
   final double size;
-  final Color color;
+  final Color? color;
   final TextAlign align;
-  const HeroTitle(this.lead, this.accent, {super.key, this.tail = '', this.size = 34, this.color = UC.ink, this.align = TextAlign.start});
+  const HeroTitle(this.lead, this.accent, {super.key, this.tail = '', this.size = 34, this.color, this.align = TextAlign.start});
   @override
   Widget build(BuildContext context) {
     final style = ds(size, c: color, h: 1.06);
@@ -228,17 +229,17 @@ class SoftCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double radius;
-  final Color color;
+  final Color? color;
   final VoidCallback? onTap;
-  const SoftCard({super.key, required this.child, this.padding = const EdgeInsets.all(18), this.radius = 28, this.color = Colors.white, this.onTap});
+  const SoftCard({super.key, required this.child, this.padding = const EdgeInsets.all(18), this.radius = 28, this.color, this.onTap});
   @override
   Widget build(BuildContext context) {
     final card = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? UC.card,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: Colors.white, width: 1),
+        border: Border.all(color: UC.dark ? UC.line : Colors.white, width: 1),
         boxShadow: [
           BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .07), blurRadius: 30, offset: const Offset(0, 14)),
           BoxShadow(color: UC.inkA(.03), blurRadius: 4, offset: const Offset(0, 1)),
@@ -257,8 +258,8 @@ class GlassCircle extends StatelessWidget {
   final String label;
   final double size;
   final bool dot;
-  final Color fg;
-  const GlassCircle(this.icon, {super.key, this.onTap, required this.label, this.size = 44, this.dot = false, this.fg = UC.ink});
+  final Color? fg;
+  const GlassCircle(this.icon, {super.key, this.onTap, required this.label, this.size = 44, this.dot = false, this.fg});
   @override
   Widget build(BuildContext context) => Pressable(
     onTap: onTap,
@@ -272,7 +273,7 @@ class GlassCircle extends StatelessWidget {
             child: SizedBox(
               width: size,
               height: size,
-              child: Icon(icon, size: size * .48, color: fg),
+              child: Icon(icon, size: size * .48, color: fg ?? UC.ink),
             ),
           ),
           if (dot)
@@ -285,7 +286,7 @@ class GlassCircle extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: UC.primary,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.6),
+                  border: Border.all(color: UC.card, width: 1.6),
                 ),
               ),
             ),
@@ -351,14 +352,14 @@ class SearchPill extends StatelessWidget {
     height: 58,
     padding: const EdgeInsets.only(left: 20, right: 8),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: .92),
+      color: UC.card.withValues(alpha: .92),
       borderRadius: BorderRadius.circular(99),
-      border: Border.all(color: Colors.white, width: 1.2),
+      border: Border.all(color: UC.dark ? UC.line : Colors.white, width: 1.2),
       boxShadow: [BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .10), blurRadius: 30, offset: const Offset(0, 12))],
     ),
     child: Row(
       children: [
-        const Icon(Icons.search_rounded, color: UC.muted, size: 24),
+        Icon(Icons.search_rounded, color: UC.muted, size: 24),
         const SizedBox(width: 12),
         Expanded(
           child: TextField(
@@ -388,7 +389,7 @@ class SearchPill extends StatelessWidget {
                       controller.clear();
                       onChanged?.call('');
                     },
-                    icon: const Icon(Icons.cancel_rounded, color: UC.muted, size: 20),
+                    icon: Icon(Icons.cancel_rounded, color: UC.muted, size: 20),
                   ),
           ),
         ),
@@ -400,7 +401,7 @@ class SearchPill extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               width: 42,
               height: 42,
-              decoration: BoxDecoration(color: filterOn ? UC.ink : UC.surface, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: filterOn ? UC.pill : UC.surface, shape: BoxShape.circle),
               child: Icon(Icons.tune_rounded, size: 21, color: filterOn ? Colors.white : UC.ink),
             ),
           ),
@@ -432,9 +433,9 @@ class CategoryBubble extends StatelessWidget {
             height: 66,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: selected ? null : Colors.white,
+              color: selected ? null : UC.card,
               gradient: selected ? UC.brandGradient : null,
-              border: Border.all(color: Colors.white, width: 1),
+              border: Border.all(color: UC.dark ? UC.line : Colors.white, width: 1),
               boxShadow: [
                 BoxShadow(
                   color: selected ? UC.primary.withValues(alpha: .35) : const Color(0xFF6B4A6E).withValues(alpha: .08),
@@ -542,7 +543,7 @@ class SlideSegmented extends StatelessWidget {
                 width: w,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: UC.card,
                     borderRadius: BorderRadius.circular(99),
                     boxShadow: [BoxShadow(color: UC.inkA(.10), blurRadius: 12, offset: const Offset(0, 3))],
                   ),
@@ -585,10 +586,7 @@ class GroupedList extends StatelessWidget {
     radius: 26,
     child: Column(
       children: [
-        for (var i = 0; i < children.length; i++) ...[
-          children[i],
-          if (i < children.length - 1) const Divider(height: 1, indent: 68, endIndent: 16, color: UC.line),
-        ],
+        for (var i = 0; i < children.length; i++) ...[children[i], if (i < children.length - 1) Divider(height: 1, indent: 68, endIndent: 16, color: UC.line)],
       ],
     ),
   );
@@ -627,7 +625,7 @@ class GroupedRow extends StatelessWidget {
               style: ts(13.5, w: FontWeight.w600, c: UC.muted),
             ),
           if (chevron)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(left: 4),
               child: Icon(Icons.chevron_right_rounded, color: UC.muted, size: 22),
             ),
@@ -638,8 +636,8 @@ class GroupedRow extends StatelessWidget {
 }
 
 /// Decoration for a white content block with the soft shadow used across the app.
-BoxDecoration softBox([double r = 24, Color c = Colors.white]) => BoxDecoration(
-  color: c,
+BoxDecoration softBox([double r = 24, Color? c]) => BoxDecoration(
+  color: c ?? UC.card,
   borderRadius: BorderRadius.circular(r),
   boxShadow: [BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .07), blurRadius: 22, offset: const Offset(0, 10))],
 );

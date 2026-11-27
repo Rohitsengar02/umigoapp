@@ -26,7 +26,7 @@ class LiveVideo extends StatelessWidget {
     final t = track;
     if (t != null) {
       return ColoredBox(
-        color: UC.ink,
+        color: UC.night,
         child: VideoTrackRenderer(t, fit: VideoViewFit.cover, mirrorMode: mirror ? VideoViewMirrorMode.mirror : VideoViewMirrorMode.off),
       );
     }
@@ -36,7 +36,7 @@ class LiveVideo extends StatelessWidget {
     }
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [UC.deep, UC.ink]),
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [UC.deep, UC.night]),
       ),
     );
   }

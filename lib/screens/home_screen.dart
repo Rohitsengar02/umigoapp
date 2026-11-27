@@ -351,12 +351,12 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: live ? const SweepGradient(colors: [UC.primary, UC.accent, UC.gold, UC.primary]) : null,
-              color: live ? null : Colors.white,
+              color: live ? null : UC.card,
               boxShadow: [BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .10), blurRadius: 14, offset: const Offset(0, 6))],
             ),
             child: Container(
               padding: const EdgeInsets.all(2.5),
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: UC.card, shape: BoxShape.circle),
               child: ClipOval(child: child),
             ),
           ),
@@ -394,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 height: 38,
                 padding: const EdgeInsets.only(left: 6, right: 14),
-                decoration: BoxDecoration(color: UC.ink, borderRadius: BorderRadius.circular(99)),
+                decoration: BoxDecoration(color: UC.pill, borderRadius: BorderRadius.circular(99)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

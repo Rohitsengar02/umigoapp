@@ -105,7 +105,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
         if (!did) _end();
       },
       child: Scaffold(
-        backgroundColor: UC.ink,
+        backgroundColor: UC.night,
         body: ListenableBuilder(
           listenable: Listenable.merge([s, LiveFx.I]),
           builder: (context, _) {

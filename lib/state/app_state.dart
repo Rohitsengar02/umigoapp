@@ -50,6 +50,9 @@ class AppState extends ChangeNotifier {
 
   /// My own profile settings.
   bool privateAccount = false;
+
+  /// App theme: false = light (white), true = dark.
+  bool darkMode = false;
   String bio = 'Singing, chatting and PK battles · Jaipur';
   String liveDays = 'Mon–Fri';
   String liveTime = '9:00 PM';
@@ -82,6 +85,7 @@ class AppState extends ChangeNotifier {
     likedReels.addAll(p.getStringList('likedReels') ?? const <String>[]);
     savedReels.addAll(p.getStringList('savedReels') ?? const <String>[]);
     privateAccount = p.getBool('privateAccount') ?? false;
+    darkMode = p.getBool('darkMode') ?? false;
     bio = p.getString('bio') ?? bio;
     liveDays = p.getString('liveDays') ?? liveDays;
     liveTime = p.getString('liveTime') ?? liveTime;
@@ -106,11 +110,18 @@ class AppState extends ChangeNotifier {
     p.setStringList('likedReels', likedReels.toList());
     p.setStringList('savedReels', savedReels.toList());
     p.setBool('privateAccount', privateAccount);
+    p.setBool('darkMode', darkMode);
     p.setString('bio', bio);
     p.setString('liveDays', liveDays);
     p.setString('liveTime', liveTime);
     p.setInt('myChatPrice', myChatPrice);
     p.setInt('mySubPrice', mySubPrice);
+  }
+
+  void setDarkMode(bool v) {
+    darkMode = v;
+    _save();
+    notifyListeners();
   }
 
   bool isUnlocked(String key) => unlocked.contains(key);

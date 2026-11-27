@@ -175,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 22),
               Row(
                 children: [
-                  const Expanded(child: Divider(color: UC.line)),
+                  Expanded(child: Divider(color: UC.line)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
@@ -183,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: ts(13, w: FontWeight.w600, c: UC.muted),
                     ),
                   ),
-                  const Expanded(child: Divider(color: UC.line)),
+                  Expanded(child: Divider(color: UC.line)),
                 ],
               ),
               const SizedBox(height: 14),

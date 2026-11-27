@@ -14,7 +14,7 @@ class WalletScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
     return AuroraBg(
-      colors: const [UC.peach, UC.lilac, UC.blush],
+      colors: [UC.peach, UC.lilac, UC.blush],
       child: ListenableBuilder(
         listenable: AppState.I,
         builder: (context, _) {
@@ -44,9 +44,9 @@ class WalletScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Eyebrow('Coins · for gifts', color: UC.ink.withValues(alpha: .65)),
+                        Eyebrow('Coins · for gifts', color: UC.night.withValues(alpha: .65)),
                         const Spacer(),
-                        Icon(Icons.contactless_rounded, color: UC.ink.withValues(alpha: .5)),
+                        Icon(Icons.contactless_rounded, color: UC.night.withValues(alpha: .5)),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -58,25 +58,25 @@ class WalletScreen extends StatelessWidget {
                           tween: Tween(begin: 0, end: st.coins.toDouble()),
                           duration: const Duration(milliseconds: 900),
                           curve: Curves.easeOutCubic,
-                          builder: (_, v, _) => Text(fmtIn(v.round()), style: ds(42, c: UC.ink)),
+                          builder: (_, v, _) => Text(fmtIn(v.round()), style: ds(42, c: UC.night)),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Spent this week: 3,180 coins',
-                      style: ts(13.5, w: FontWeight.w600, c: UC.ink.withValues(alpha: .7)),
+                      style: ts(13.5, w: FontWeight.w600, c: UC.night.withValues(alpha: .7)),
                     ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: _btn('Recharge', UC.ink, Colors.white, Icons.add_rounded, () => Navigator.pushNamed(context, '/coins'))),
+                        Expanded(child: _btn('Recharge', UC.pill, Colors.white, Icons.add_rounded, () => Navigator.pushNamed(context, '/coins'))),
                         const SizedBox(width: 10),
                         Expanded(
                           child: _btn(
                             'History',
                             Colors.white.withValues(alpha: .55),
-                            UC.ink,
+                            UC.night,
                             Icons.receipt_long_rounded,
                             () => Navigator.pushNamed(context, '/transactions'),
                           ),
@@ -91,7 +91,7 @@ class WalletScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.deep, UC.ink]),
+                  gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [UC.deep, UC.violet]),
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [BoxShadow(color: UC.deep.withValues(alpha: .35), blurRadius: 30, offset: const Offset(0, 14))],
                 ),
@@ -206,7 +206,7 @@ class WalletScreen extends StatelessWidget {
               style: ts(11, w: FontWeight.w800, c: fg),
             ),
             const SizedBox(height: 6),
-            past ? const Icon(Icons.check_circle_rounded, size: 20, color: UC.accentText) : const CoinDot(size: 20),
+            past ? Icon(Icons.check_circle_rounded, size: 20, color: UC.accentText) : const CoinDot(size: 20),
             const SizedBox(height: 6),
             Text(
               '+$amt',

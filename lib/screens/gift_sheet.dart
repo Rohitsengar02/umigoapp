@@ -39,8 +39,8 @@ class _GiftSheetState extends State<GiftSheet> {
       listenable: st,
       builder: (context, _) => Container(
         padding: EdgeInsets.fromLTRB(12, 8, 12, pad + 18),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: UC.card,
           borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
         ),
         child: Column(
@@ -67,7 +67,7 @@ class _GiftSheetState extends State<GiftSheet> {
                         margin: const EdgeInsets.only(right: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(color: t == tab ? UC.ink : UC.ink.withValues(alpha: .05), borderRadius: BorderRadius.circular(99)),
+                        decoration: BoxDecoration(color: t == tab ? UC.pill : UC.ink.withValues(alpha: .05), borderRadius: BorderRadius.circular(99)),
                         child: Text(
                           t,
                           style: ts(13.5, w: FontWeight.w800, c: t == tab ? Colors.white : UC.muted),
@@ -188,7 +188,7 @@ class _GiftSheetState extends State<GiftSheet> {
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: n == qty ? UC.primary : Colors.white,
+                          color: n == qty ? UC.primary : UC.card,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: n == qty ? UC.primary : UC.line, width: 1.5),
                         ),

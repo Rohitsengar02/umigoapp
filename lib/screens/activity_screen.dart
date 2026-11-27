@@ -158,9 +158,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: UC.card,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: fresh ? UC.primary.withValues(alpha: .35) : Colors.white),
+        border: Border.all(color: fresh ? UC.primary.withValues(alpha: .35) : UC.card),
         boxShadow: [BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .07), blurRadius: 22, offset: const Offset(0, 10))],
       ),
       child: InkWell(
@@ -191,7 +191,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                         decoration: BoxDecoration(
                           color: tint,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                          border: Border.all(color: UC.card, width: 2),
                         ),
                         child: Icon(icon, size: 11, color: Colors.white),
                       ),

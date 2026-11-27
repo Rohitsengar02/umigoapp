@@ -17,7 +17,7 @@ class _BuyCoinsScreenState extends State<BuyCoinsScreen> {
   String method = 'upi';
   int? added;
 
-  static const methods = [
+  static final methods = [
     ('upi', 'UPI', 'UPI', 'GPay, PhonePe, Paytm', UC.greenSoft, UC.greenText),
     ('play', 'GP', 'Google Play', 'Billed to your Play account', Color(0xFFE8F0FE), Color(0xFF1A56C4)),
     ('card', 'CARD', 'Debit / credit card', 'Visa, Mastercard, RuPay', UC.soft, UC.deep),
@@ -90,7 +90,7 @@ class _BuyCoinsScreenState extends State<BuyCoinsScreen> {
                           margin: const EdgeInsets.only(bottom: 6),
                           padding: const EdgeInsets.all(10),
                           decoration: softBox(22).copyWith(
-                            border: Border.all(color: method == m.$1 ? UC.primary : Colors.white, width: method == m.$1 ? 2 : 1),
+                            border: Border.all(color: method == m.$1 ? UC.primary : UC.card, width: method == m.$1 ? 2 : 1),
                           ),
                           child: Row(
                             children: [
@@ -180,7 +180,7 @@ class _BuyCoinsScreenState extends State<BuyCoinsScreen> {
       }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        decoration: softBox(24, on ? const Color(0xFFFFF5F8) : Colors.white).copyWith(border: Border.all(color: on ? UC.primary : Colors.white, width: 2)),
+        decoration: softBox(24, on ? UC.soft : UC.card).copyWith(border: Border.all(color: on ? UC.primary : UC.card, width: 2)),
         child: Stack(
           children: [
             Center(

@@ -303,7 +303,7 @@ class CreatorCard extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   height: 34,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(color: f ? UC.surface : UC.ink, borderRadius: BorderRadius.circular(99)),
+                  decoration: BoxDecoration(color: f ? UC.surface : UC.pill, borderRadius: BorderRadius.circular(99)),
                   child: Text(
                     f ? 'Following' : 'Follow',
                     style: ts(13, w: FontWeight.w800, c: f ? UC.ink : Colors.white),

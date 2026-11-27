@@ -74,7 +74,7 @@ class _LiveViewerScreenState extends State<LiveViewerScreen> {
     final pad = MediaQuery.paddingOf(context);
     final h = widget.demoHost;
     return Scaffold(
-      backgroundColor: UC.ink,
+      backgroundColor: UC.night,
       resizeToAvoidBottomInset: true,
       body: ListenableBuilder(
         listenable: Listenable.merge([s, AppState.I]),

@@ -21,12 +21,47 @@ import 'theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppState.I.load();
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent));
+  UC.dark = AppState.I.darkMode;
+  _statusBar();
   runApp(const UmigoApp());
 }
 
-class UmigoApp extends StatelessWidget {
+void _statusBar() =>
+    SystemChrome.setSystemUIOverlayStyle((UC.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark).copyWith(statusBarColor: Colors.transparent));
+
+/// Rebuilds the whole tree when the light/dark choice changes, keeping every
+/// open screen and its state (colours are read from [UC] at build time).
+class UmigoApp extends StatefulWidget {
   const UmigoApp({super.key});
+  @override
+  State<UmigoApp> createState() => _UmigoAppState();
+}
+
+class _UmigoAppState extends State<UmigoApp> {
+  @override
+  void initState() {
+    super.initState();
+    AppState.I.addListener(_onState);
+  }
+
+  @override
+  void dispose() {
+    AppState.I.removeListener(_onState);
+    super.dispose();
+  }
+
+  void _onState() {
+    if (AppState.I.darkMode == UC.dark) return;
+    UC.dark = AppState.I.darkMode;
+    _statusBar();
+    setState(() {});
+    void rebuild(Element e) {
+      e.markNeedsBuild();
+      e.visitChildren(rebuild);
+    }
+
+    (context as Element).visitChildren(rebuild);
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -191,7 +191,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   decoration: BoxDecoration(
                                     color: UC.green,
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
+                                    border: Border.all(color: UC.card, width: 2),
                                   ),
                                 ),
                               ),
@@ -258,7 +258,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         const SizedBox(height: 10),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(99)),
+                          decoration: BoxDecoration(color: UC.card, borderRadius: BorderRadius.circular(99)),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -296,7 +296,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       padding: EdgeInsets.fromLTRB(12, 6, 12, pad.bottom + 10),
                       child: Glass(
                         radius: BorderRadius.circular(99),
-                        tint: const Color(0xEBFFFFFF),
+                        tint: UC.glassStrong,
                         padding: const EdgeInsets.all(5),
                         child: Row(
                           children: [
@@ -416,7 +416,7 @@ class _ChatScreenState extends State<ChatScreen> {
           padding: EdgeInsets.symmetric(horizontal: 14, vertical: gift ? 10 : 11),
           decoration: BoxDecoration(
             gradient: m.mine ? (gift ? UC.coinGradient : UC.brandGradient) : null,
-            color: m.mine ? null : Colors.white,
+            color: m.mine ? null : UC.card,
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(22),
               topRight: const Radius.circular(22),
@@ -477,7 +477,7 @@ class _TypingState extends State<_Typing> with SingleTickerProviderStateMixin {
     child: Container(
       margin: const EdgeInsets.only(top: 6),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+      decoration: BoxDecoration(color: UC.card, borderRadius: BorderRadius.circular(22)),
       child: AnimatedBuilder(
         animation: a,
         builder: (_, _) => Row(

@@ -111,7 +111,7 @@ class AppDrawer extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             ...staggerAll([for (final t in top) _tile(t)], stepMs: 35, baseMs: 120),
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 8, 20, 8),
               child: Divider(color: UC.line, height: 1),
             ),
@@ -380,7 +380,7 @@ class _Empty extends StatelessWidget {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [UC.blush, UC.peach], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                gradient: LinearGradient(colors: [UC.blush, UC.peach], begin: Alignment.topLeft, end: Alignment.bottomRight),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 4),
                 boxShadow: [BoxShadow(color: UC.primary.withValues(alpha: .18), blurRadius: 30, offset: const Offset(0, 12))],

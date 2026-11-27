@@ -121,7 +121,7 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = onTap != null;
     final useGradient = !dark && color == UC.primary;
-    final bg = dark ? UC.ink : color;
+    final bg = dark ? UC.pill : color;
     return Pressable(
       onTap: onTap,
       label: label,
@@ -137,10 +137,10 @@ class PrimaryButton extends StatelessWidget {
             gradient: useGradient
                 ? const LinearGradient(colors: [UC.primary, Color(0xFFE5677F), UC.accent], begin: Alignment.centerLeft, end: Alignment.centerRight)
                 : dark
-                ? const LinearGradient(colors: [UC.ink, Color(0xFF4A3550)], begin: Alignment.centerLeft, end: Alignment.centerRight)
+                ? const LinearGradient(colors: [UC.violet, Color(0xFF7B2C82)], begin: Alignment.centerLeft, end: Alignment.centerRight)
                 : null,
             borderRadius: BorderRadius.circular(99),
-            boxShadow: enabled ? [BoxShadow(color: (dark ? UC.ink : bg).withValues(alpha: .28), blurRadius: 22, offset: const Offset(0, 10))] : null,
+            boxShadow: enabled ? [BoxShadow(color: (dark ? UC.pill : bg).withValues(alpha: .28), blurRadius: 22, offset: const Offset(0, 10))] : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -187,12 +187,12 @@ class ChoiceChipX extends StatelessWidget {
       curve: Curves.easeOutCubic,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: on ? UC.ink : Colors.white,
+        color: on ? UC.pill : UC.card,
         borderRadius: BorderRadius.circular(pill ? 99 : 14),
-        border: Border.all(color: on ? UC.ink : Colors.white),
+        border: Border.all(color: on ? UC.pill : UC.card),
         boxShadow: [
           BoxShadow(
-            color: (on ? UC.ink : const Color(0xFF6B4A6E)).withValues(alpha: on ? .22 : .07),
+            color: (on ? UC.pill : UC.deep).withValues(alpha: on ? .22 : .07),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -225,9 +225,9 @@ class Segmented extends StatelessWidget {
   final List<String> items;
   final String value;
   final ValueChanged<String> onChanged;
-  final Color bg;
+  final Color? bg;
   final double? width;
-  const Segmented({super.key, required this.items, required this.value, required this.onChanged, this.bg = UC.surface, this.width});
+  const Segmented({super.key, required this.items, required this.value, required this.onChanged, this.bg, this.width});
   @override
   Widget build(BuildContext context) => SizedBox(
     width: width ?? items.length * 124.0,
@@ -281,7 +281,7 @@ class FieldBox extends StatelessWidget {
           height: 56,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: UC.card,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: error ? UC.red : (focused ? UC.primary : Colors.white), width: focused || error ? 1.8 : 1),
             boxShadow: [
@@ -334,9 +334,9 @@ class CoinPill extends StatelessWidget {
       height: 44,
       padding: EdgeInsets.only(left: 8, right: plus ? 6 : 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: UC.card,
         borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: Colors.white),
+        border: Border.all(color: UC.card),
         boxShadow: [BoxShadow(color: UC.accent.withValues(alpha: .25), blurRadius: 18, offset: const Offset(0, 6))],
       ),
       child: Row(
@@ -367,16 +367,16 @@ class CoinPill extends StatelessWidget {
 class TopBar extends StatelessWidget {
   final String title;
   final List<Widget> actions;
-  final Color fg;
+  final Color? fg;
   final bool back;
-  const TopBar(this.title, {super.key, this.actions = const [], this.fg = UC.ink, this.back = true});
+  const TopBar(this.title, {super.key, this.actions = const [], this.fg, this.back = true});
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.fromLTRB(back ? 14 : 20, 8, 12, 8),
     child: Row(
       children: [
         if (back) ...[
-          fg == UC.ink
+          fg == null
               ? GlassCircle(Icons.arrow_back_ios_new_rounded, label: 'Back', size: 42, onTap: () => Navigator.maybePop(context))
               : IconButton(
                   tooltip: 'Back',

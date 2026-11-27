@@ -23,7 +23,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         : demoRanks.reversed.toList().asMap().entries.map((e) => Ranked(e.key + 1, e.value.name, e.value.img, e.value.lv, e.value.score)).toList();
     final podium = [ranks[1], ranks[0], ranks[2]];
     return AuroraBg(
-      colors: const [UC.peach, UC.lilac, UC.blush],
+      colors: [UC.peach, UC.lilac, UC.blush],
       child: Stack(
         children: [
           ListView(
@@ -169,7 +169,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         padding: const EdgeInsets.only(top: 6),
         alignment: Alignment.topCenter,
         decoration: BoxDecoration(
-          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.white, Colors.white.withValues(alpha: .3)]),
+          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [UC.card, UC.card.withValues(alpha: .3)]),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
         ),
         child: Text('${r.rank}', style: ds(28, c: medal == UC.gold ? UC.accentText : UC.deep)),

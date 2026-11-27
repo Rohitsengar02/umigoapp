@@ -405,7 +405,7 @@ class _StepScreenState extends State<_StepScreen> {
     padding: const EdgeInsets.symmetric(horizontal: 12),
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: UC.card,
       borderRadius: BorderRadius.circular(18),
       boxShadow: [BoxShadow(color: const Color(0xFF6B4A6E).withValues(alpha: .07), blurRadius: 16, offset: const Offset(0, 6))],
     ),
@@ -527,7 +527,7 @@ class _Header extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: UC.card,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(6),

@@ -153,7 +153,7 @@ class _CreatorProfileScreenState extends State<CreatorProfileScreen> {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(Icons.place_rounded, size: 14, color: UC.muted),
+                              Icon(Icons.place_rounded, size: 14, color: UC.muted),
                               const SizedBox(width: 3),
                               Text(
                                 c.region,
@@ -234,7 +234,7 @@ class _CreatorProfileScreenState extends State<CreatorProfileScreen> {
                               height: 42,
                               decoration: BoxDecoration(
                                 gradient: subbed ? null : const LinearGradient(colors: [Color(0xFF8E4FA0), UC.primary]),
-                                color: subbed ? Colors.white : null,
+                                color: subbed ? UC.card : null,
                                 borderRadius: BorderRadius.circular(14),
                                 boxShadow: [BoxShadow(color: const Color(0xFF8E4FA0).withValues(alpha: .25), blurRadius: 14, offset: const Offset(0, 6))],
                               ),
@@ -286,7 +286,7 @@ class _CreatorProfileScreenState extends State<CreatorProfileScreen> {
                                       duration: const Duration(milliseconds: 200),
                                       width: 40,
                                       height: 40,
-                                      decoration: BoxDecoration(color: remind ? UC.ink : UC.surface, shape: BoxShape.circle),
+                                      decoration: BoxDecoration(color: remind ? UC.pill : UC.surface, shape: BoxShape.circle),
                                       child: Icon(
                                         remind ? Icons.notifications_active_rounded : Icons.notifications_none_rounded,
                                         size: 20,
@@ -317,7 +317,7 @@ class _CreatorProfileScreenState extends State<CreatorProfileScreen> {
                                     padding: const EdgeInsets.all(2.5),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Colors.white,
+                                      color: UC.card,
                                       border: Border.all(color: UC.line, width: 1.5),
                                     ),
                                     child: Avatar(img: c.photos.isEmpty ? c.img : c.photos[(i + 1) % c.photos.length], size: 58),
@@ -595,7 +595,7 @@ class ProfileAvatar extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: live ? const SweepGradient(colors: [UC.primary, UC.accent, UC.gold, UC.primary]) : null,
-              color: live ? null : Colors.white,
+              color: live ? null : UC.card,
               boxShadow: [BoxShadow(color: UC.primary.withValues(alpha: .18), blurRadius: 22, offset: const Offset(0, 10))],
             ),
             child: Avatar(img: img, size: 88, border: Colors.white, borderW: 3),
@@ -646,7 +646,7 @@ class ProfileButton extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         gradient: filled ? UC.brandGradient : null,
-        color: filled ? null : Colors.white,
+        color: filled ? null : UC.card,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -701,7 +701,7 @@ class ProfileTabsHeader extends SliverPersistentHeaderDelegate {
               bottom: 0,
               height: 2.5,
               child: Container(
-                decoration: BoxDecoration(color: UC.ink, borderRadius: BorderRadius.circular(9)),
+                decoration: BoxDecoration(color: UC.primary, borderRadius: BorderRadius.circular(9)),
               ),
             ),
             Row(
